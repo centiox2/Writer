@@ -3,6 +3,7 @@ package com.example.data
 import android.content.Context
 import com.example.audio.AudioFileManager
 import com.example.audio.WaveformAnalyzer
+import com.example.audio.export.WavMixdownExporter
 import com.example.data.database.SongDatabase
 import com.example.data.repositories.AlbumRepository
 import com.example.data.repositories.AudioRepository
@@ -14,6 +15,7 @@ interface AppContainer {
   val audioRepository: AudioRepository
   val audioFileManager: AudioFileManager
   val waveformAnalyzer: WaveformAnalyzer
+  val wavMixdownExporter: WavMixdownExporter
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -39,5 +41,9 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
   override val waveformAnalyzer: WaveformAnalyzer by lazy {
     WaveformAnalyzer(context)
+  }
+
+  override val wavMixdownExporter: WavMixdownExporter by lazy {
+    WavMixdownExporter(context)
   }
 }

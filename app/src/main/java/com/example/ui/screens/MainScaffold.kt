@@ -48,7 +48,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.audio.AudioRecorderEngine
 import com.example.audio.BeatPlayer
+import com.example.audio.RecordingPreviewPlayer
 import com.example.audio.mixer.MultiTrackAudioMixer
 import com.example.data.AppContainer
 import com.example.ui.components.MultiTrackMixerScreen
@@ -59,6 +61,7 @@ import com.example.ui.theme.ThemeMode
 import com.example.ui.viewmodels.AlbumsViewModel
 import com.example.ui.viewmodels.LyricEditorViewModel
 import com.example.ui.viewmodels.MultiTrackMixerViewModel
+import com.example.ui.viewmodels.RecordingsViewModel
 import com.example.ui.viewmodels.SongsViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -87,6 +90,20 @@ fun MainScaffold(
 
   val albumsViewModel = remember(appContainer) {
     AlbumsViewModel(appContainer.albumRepository, appContainer.songRepository)
+  }
+
+  val context = LocalContext.current
+  val recordingsViewModel = remember(appContainer) {
+    val previewPlayer = RecordingPreviewPlayer(context)
+    val recorderEngine = AudioRecorderEngine(context)
+    RecordingsViewModel(
+      audioRepository = appContainer.audioRepository,
+      songRepository = appContainer.songRepository,
+      audioFileManager = appContainer.audioFileManager,
+      waveformAnalyzer = appContainer.waveformAnalyzer,
+      previewPlayer = previewPlayer,
+      recorderEngine = recorderEngine
+    )
   }
 
   BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -175,7 +192,7 @@ fun MainScaffold(
             }
             composable(Screen.Recordings.route) {
               RecordingsScreen(
-                audioRepository = appContainer.audioRepository
+                viewModel = recordingsViewModel
               )
             }
             composable(Screen.Settings.route) {
@@ -223,6 +240,7 @@ fun MainScaffold(
                   audioRepository = appContainer.audioRepository,
                   audioFileManager = appContainer.audioFileManager,
                   waveformAnalyzer = appContainer.waveformAnalyzer,
+                  wavMixdownExporter = appContainer.wavMixdownExporter,
                   mixer = mixer
                 )
               }
@@ -329,7 +347,7 @@ fun MainScaffold(
           }
           composable(Screen.Recordings.route) {
             RecordingsScreen(
-              audioRepository = appContainer.audioRepository
+              viewModel = recordingsViewModel
             )
           }
           composable(Screen.Settings.route) {
@@ -377,6 +395,7 @@ fun MainScaffold(
                 audioRepository = appContainer.audioRepository,
                 audioFileManager = appContainer.audioFileManager,
                 waveformAnalyzer = appContainer.waveformAnalyzer,
+                wavMixdownExporter = appContainer.wavMixdownExporter,
                 mixer = mixer
               )
             }

@@ -1,10 +1,15 @@
 package com.example.ui.viewmodels
 
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.audio.AudioFileManager
 import com.example.audio.WaveformAnalyzer
+import com.example.audio.export.MixdownExportResult
+import com.example.audio.export.MixdownProgress
+import com.example.audio.export.WavMixdownExporter
 import com.example.audio.mixer.MixerPlaybackState
 import com.example.audio.mixer.MultiTrackAudioMixer
 import com.example.audio.mixer.TrackChannel
@@ -13,6 +18,7 @@ import com.example.data.repositories.SongRepository
 import com.example.domain.models.AudioTrack
 import com.example.domain.models.Song
 import com.example.domain.models.TrackType
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +43,12 @@ data class MultiTrackMixerUiState(
   val isImportingAudio: Boolean = false,
   val pendingImportType: TrackType = TrackType.IMPORTED_AUDIO,
   val errorMessage: String? = null,
-  val showDeleteConfirmDialog: AudioTrack? = null
+  val showDeleteConfirmDialog: AudioTrack? = null,
+  val showExportSheet: Boolean = false,
+  val isExporting: Boolean = false,
+  val exportProgress: MixdownProgress = MixdownProgress(),
+  val exportResult: MixdownExportResult? = null,
+  val exportErrorMessage: String? = null
 )
 
 class MultiTrackMixerViewModel(
@@ -46,6 +57,7 @@ class MultiTrackMixerViewModel(
   private val audioRepository: AudioRepository,
   private val audioFileManager: AudioFileManager,
   private val waveformAnalyzer: WaveformAnalyzer,
+  private val wavMixdownExporter: WavMixdownExporter,
   private val mixer: MultiTrackAudioMixer
 ) : ViewModel() {
 
@@ -53,6 +65,7 @@ class MultiTrackMixerViewModel(
   val uiState: StateFlow<MultiTrackMixerUiState> = _uiState.asStateFlow()
 
   private var waveformJobs = HashMap<String, Job>()
+  private var exportJob: Job? = null
 
   init {
     loadSong()
@@ -235,8 +248,126 @@ class MultiTrackMixerViewModel(
     _uiState.update { it.copy(errorMessage = null) }
   }
 
+  // --- WAV Mixdown Export Controls ---
+
+  fun openExportSheet() {
+    _uiState.update {
+      it.copy(
+        showExportSheet = true,
+        exportErrorMessage = null,
+        isExporting = false,
+        exportResult = null,
+        exportProgress = MixdownProgress()
+      )
+    }
+  }
+
+  fun closeExportSheet() {
+    cancelExport()
+    _uiState.update {
+      it.copy(
+        showExportSheet = false,
+        isExporting = false,
+        exportErrorMessage = null
+      )
+    }
+  }
+
+  fun startWavExport() {
+    exportJob?.cancel()
+    val channels = mixer.tracks.value
+    if (channels.isEmpty()) {
+      _uiState.update { it.copy(exportErrorMessage = "No tracks available to export.") }
+      return
+    }
+
+    val songTitle = _uiState.value.song?.title?.replace(Regex("[^a-zA-Z0-9._-]"), "_") ?: "Mix"
+    val exportFileName = "${songTitle}_Master_${System.currentTimeMillis()}.wav"
+    val masterGain = _uiState.value.playbackState.masterVolume
+
+    exportJob = viewModelScope.launch {
+      _uiState.update {
+        it.copy(
+          isExporting = true,
+          exportErrorMessage = null,
+          exportResult = null,
+          exportProgress = MixdownProgress(fraction = 0f, statusMessage = "Starting mixdown...")
+        )
+      }
+
+      val result = wavMixdownExporter.exportMixToFile(
+        tracks = channels,
+        masterVolume = masterGain,
+        fileName = exportFileName,
+        onProgress = { progress ->
+          _uiState.update { it.copy(exportProgress = progress) }
+        }
+      )
+
+      _uiState.update {
+        it.copy(
+          isExporting = false,
+          exportResult = result,
+          exportErrorMessage = if (!result.success) result.errorMessage ?: "Export failed" else null
+        )
+      }
+    }
+  }
+
+  fun cancelExport() {
+    exportJob?.cancel()
+    exportJob = null
+    _uiState.update {
+      it.copy(
+        isExporting = false,
+        exportErrorMessage = if (it.isExporting) "Export cancelled." else it.exportErrorMessage
+      )
+    }
+  }
+
+  fun exportToSafDestination(destinationUri: Uri) {
+    val channels = mixer.tracks.value
+    val masterGain = _uiState.value.playbackState.masterVolume
+
+    exportJob?.cancel()
+    exportJob = viewModelScope.launch {
+      _uiState.update {
+        it.copy(
+          isExporting = true,
+          exportErrorMessage = null,
+          exportResult = null,
+          exportProgress = MixdownProgress(fraction = 0f, statusMessage = "Saving to selected folder...")
+        )
+      }
+
+      val result = wavMixdownExporter.exportMixToSafUri(
+        safDestinationUri = destinationUri,
+        tracks = channels,
+        masterVolume = masterGain,
+        onProgress = { progress ->
+          _uiState.update { it.copy(exportProgress = progress) }
+        }
+      )
+
+      _uiState.update {
+        it.copy(
+          isExporting = false,
+          exportResult = result,
+          exportErrorMessage = if (!result.success) result.errorMessage ?: "Failed to save file" else null
+        )
+      }
+    }
+  }
+
+  fun getShareIntent(): Intent? {
+    val file = _uiState.value.exportResult?.file ?: return null
+    val songTitle = _uiState.value.song?.title ?: "Song Mix"
+    return wavMixdownExporter.createShareIntent(file, songTitle)
+  }
+
   override fun onCleared() {
     super.onCleared()
+    exportJob?.cancel()
     mixer.release()
     for ((_, job) in waveformJobs) {
       job.cancel()

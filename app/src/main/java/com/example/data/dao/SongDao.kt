@@ -99,6 +99,9 @@ interface SongDao {
   @Query("SELECT * FROM songs WHERE archived = 0 ORDER BY updatedAt DESC")
   fun getActiveSongs(): Flow<List<SongEntity>>
 
+  @Query("SELECT * FROM songs WHERE archived = 0 ORDER BY updatedAt DESC")
+  suspend fun getActiveSongsSync(): List<SongEntity>
+
   @Query("SELECT * FROM songs WHERE archived = 1 ORDER BY updatedAt DESC")
   fun getArchivedSongs(): Flow<List<SongEntity>>
 

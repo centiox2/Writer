@@ -22,6 +22,12 @@ class SongRepository(
     return songDao.getActiveSongsWithDetails().map { list -> list.map { it.toDomain() } }
   }
 
+  suspend fun getActiveSongsSync(): List<Song> {
+    return songDao.getActiveSongsSync().map { it.toDomain() }
+  }
+
+  fun getAllSongs(): Flow<List<Song>> = getActiveSongs()
+
   fun getFavoriteSongs(): Flow<List<Song>> {
     return songDao.getFavoriteSongsWithDetails().map { list -> list.map { it.toDomain() } }
   }

@@ -69,6 +69,10 @@ class AudioRepository(
     return recordingDao.getAllRecordings().map { list -> list.map { it.toDomain() } }
   }
 
+  suspend fun getAllRecordingsSync(): List<Recording> {
+    return recordingDao.getAllRecordingsSync().map { it.toDomain() }
+  }
+
   suspend fun addRecording(
     songId: String,
     name: String,
@@ -85,6 +89,42 @@ class AudioRepository(
     )
     recordingDao.insertRecording(recording.toEntity())
     return recording
+  }
+
+  suspend fun getRecordingByIdSync(id: String): Recording? {
+    return recordingDao.getRecordingById(id)?.toDomain()
+  }
+
+  suspend fun duplicateRecording(
+    recordingId: String,
+    newName: String? = null,
+    newUri: String? = null
+  ): Recording? {
+    val existing = getRecordingByIdSync(recordingId) ?: return null
+    val copyName = newName ?: "${existing.name} (Copy)"
+    val copyUri = newUri ?: existing.uri
+    return addRecording(
+      songId = existing.songId,
+      name = copyName,
+      uri = copyUri,
+      duration = existing.duration
+    )
+  }
+
+  suspend fun attachRecordingToMixer(
+    recordingId: String,
+    targetSongId: String? = null,
+    trackType: TrackType = TrackType.RECORDING
+  ): AudioTrack? {
+    val recording = getRecordingByIdSync(recordingId) ?: return null
+    val effectiveSongId = targetSongId ?: recording.songId
+    return addTrack(
+      songId = effectiveSongId,
+      name = recording.name,
+      uri = recording.uri,
+      type = trackType,
+      duration = recording.duration
+    )
   }
 
   suspend fun renameRecording(id: String, newName: String) {

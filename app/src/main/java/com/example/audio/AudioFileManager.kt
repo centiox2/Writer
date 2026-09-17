@@ -23,8 +23,40 @@ class AudioFileManager(private val context: Context) {
   private val beatsDir: File
     get() = File(context.filesDir, "beats").apply { if (!exists()) mkdirs() }
 
+  private val recordingsDir: File
+    get() = File(context.filesDir, "recordings").apply { if (!exists()) mkdirs() }
+
   private val waveformsDir: File
     get() = File(context.cacheDir, "waveforms").apply { if (!exists()) mkdirs() }
+
+  /**
+   * Creates a dedicated destination file for a new recording take.
+   */
+  fun createNewRecordingFile(songId: String, extension: String = "m4a"): File {
+    val timestamp = System.currentTimeMillis()
+    val cleanSongId = songId.replace("[^a-zA-Z0-9._-]".toRegex(), "_")
+    val fileName = "take_${cleanSongId}_${timestamp}.$extension"
+    return File(recordingsDir, fileName)
+  }
+
+  /**
+   * Duplicates an audio file on disk, returning the new file path.
+   */
+  fun duplicateAudioFile(sourcePath: String, prefix: String = "copy_"): String? {
+    return try {
+      val source = File(sourcePath)
+      if (!source.exists()) return null
+      val ext = source.extension
+      val baseName = source.nameWithoutExtension
+      val targetName = "${prefix}${baseName}_${System.currentTimeMillis()}.$ext"
+      val destFile = File(source.parentFile ?: recordingsDir, targetName)
+      source.copyTo(destFile, overwrite = true)
+      destFile.absolutePath
+    } catch (e: Exception) {
+      Log.e("AudioFileManager", "Failed to duplicate audio file: ${e.message}", e)
+      null
+    }
+  }
 
   /**
    * Imports an audio file chosen by the user via Storage Access Framework.
@@ -100,16 +132,18 @@ class AudioFileManager(private val context: Context) {
     }
 
   /**
-   * Safely deletes a file from internal storage.
+   * Safely deletes a file from internal storage (beats or recordings).
    */
-  fun deleteBeatFile(path: String) {
+  fun deleteBeatFile(path: String) = deleteAudioFile(path)
+
+  fun deleteAudioFile(path: String) {
     try {
       val file = File(path)
-      if (file.exists() && file.parentFile?.absolutePath == beatsDir.absolutePath) {
+      if (file.exists()) {
         file.delete()
       }
     } catch (e: Exception) {
-      Log.w("AudioFileManager", "Failed to delete beat file $path: ${e.message}")
+      Log.w("AudioFileManager", "Failed to delete audio file $path: ${e.message}")
     }
   }
 

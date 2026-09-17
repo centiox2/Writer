@@ -17,6 +17,9 @@ interface RecordingDao {
   @Query("SELECT * FROM recordings ORDER BY createdAt DESC")
   fun getAllRecordings(): Flow<List<RecordingEntity>>
 
+  @Query("SELECT * FROM recordings ORDER BY createdAt DESC")
+  suspend fun getAllRecordingsSync(): List<RecordingEntity>
+
   @Query("SELECT * FROM recordings WHERE songId = :songId")
   suspend fun getRecordingsForSongSync(songId: String): List<RecordingEntity>
 
