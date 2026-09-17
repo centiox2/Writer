@@ -148,6 +148,18 @@ class AudioFileManager(private val context: Context) {
   }
 
   /**
+   * Total bytes used by app-generated files (recordings, beats, artwork, etc.)
+   * under internal storage. Used for the Settings > Storage information display.
+   */
+  fun getAppStorageUsageBytes(): Long {
+    return try {
+      context.filesDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+    } catch (e: Exception) {
+      0L
+    }
+  }
+
+  /**
    * Checks if an audio file exists and is readable on disk.
    */
   fun fileExists(path: String): Boolean {

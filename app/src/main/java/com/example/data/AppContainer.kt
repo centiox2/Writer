@@ -9,6 +9,7 @@ import com.example.data.database.SongDatabase
 import com.example.data.repositories.AlbumRepository
 import com.example.data.repositories.AudioRepository
 import com.example.data.repositories.SongRepository
+import com.example.data.settings.SettingsRepository
 
 interface AppContainer {
   val songRepository: SongRepository
@@ -18,6 +19,7 @@ interface AppContainer {
   val waveformAnalyzer: WaveformAnalyzer
   val wavMixdownExporter: WavMixdownExporter
   val projectArchiveManager: ProjectArchiveManager
+  val settingsRepository: SettingsRepository
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -51,5 +53,9 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
   override val projectArchiveManager: ProjectArchiveManager by lazy {
     ProjectArchiveManager(context, database, audioFileManager)
+  }
+
+  override val settingsRepository: SettingsRepository by lazy {
+    SettingsRepository(context)
   }
 }

@@ -10,6 +10,8 @@ import com.example.audio.RecordingState
 import com.example.audio.WaveformAnalyzer
 import com.example.data.repositories.AudioRepository
 import com.example.data.repositories.SongRepository
+import com.example.data.settings.AppSettings
+import com.example.data.settings.SettingsRepository
 import com.example.domain.models.Recording
 import com.example.domain.models.Song
 import com.example.domain.models.TrackType
@@ -69,7 +71,8 @@ class RecordingsViewModel(
   private val audioFileManager: AudioFileManager,
   private val waveformAnalyzer: WaveformAnalyzer,
   private val previewPlayer: RecordingPreviewPlayer,
-  private val recorderEngine: AudioRecorderEngine
+  private val recorderEngine: AudioRecorderEngine,
+  private val settingsRepository: SettingsRepository? = null
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(RecordingsUiState())
@@ -81,12 +84,21 @@ class RecordingsViewModel(
 
   private var cachedRecordings: List<Recording> = emptyList()
   private var cachedSongs: List<Song> = emptyList()
+  private var cachedSettings: AppSettings = AppSettings()
 
   init {
     observeRecordings()
     observeSongs()
     observePreviewPlayerState()
     observeRecorderStatus()
+    observeSettings()
+  }
+
+  private fun observeSettings() {
+    val repo = settingsRepository ?: return
+    viewModelScope.launch {
+      repo.settings.collect { cachedSettings = it }
+    }
   }
 
   suspend fun refreshDataSync() {
@@ -358,7 +370,8 @@ class RecordingsViewModel(
       val track = audioRepository.attachRecordingToMixer(
         recordingId = recording.id,
         targetSongId = effectiveSongId,
-        trackType = trackType
+        trackType = trackType,
+        volume = cachedSettings.defaultVolume
       )
       if (track != null) {
         val songName = _uiState.value.songs.find { it.id == effectiveSongId }?.title ?: "song"
@@ -407,7 +420,11 @@ class RecordingsViewModel(
     val file = audioFileManager.createNewRecordingFile(songId = songId)
     currentRecordingFile = file
 
-    val started = recorderEngine.startRecording(file)
+    val started = recorderEngine.startRecording(
+      targetFile = file,
+      quality = cachedSettings.recordingQuality,
+      useCommunicationMode = cachedSettings.communicationModeEnabled
+    )
     if (started) {
       _uiState.update {
         it.copy(
