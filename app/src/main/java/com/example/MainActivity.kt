@@ -6,17 +6,17 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.data.DefaultAppContainer
+import com.example.data.settings.AppSettings
 import com.example.ui.screens.MainScaffold
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.SongwriterTheme
-import com.example.ui.theme.ThemeMode
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,13 +26,16 @@ class MainActivity : ComponentActivity() {
     val appContainer = DefaultAppContainer(applicationContext)
 
     setContent {
-      var currentThemeMode by remember { mutableStateOf(ThemeMode.DARK) }
+      val scope = rememberCoroutineScope()
+      val appSettings by appContainer.settingsRepository.settings.collectAsState(initial = AppSettings())
 
-      SongwriterTheme(themeMode = currentThemeMode) {
+      SongwriterTheme(themeMode = appSettings.themeMode) {
         MainScaffold(
           appContainer = appContainer,
-          currentThemeMode = currentThemeMode,
-          onThemeModeSelected = { currentThemeMode = it }
+          currentThemeMode = appSettings.themeMode,
+          onThemeModeSelected = { mode ->
+            scope.launch { appContainer.settingsRepository.setThemeMode(mode) }
+          }
         )
       }
     }

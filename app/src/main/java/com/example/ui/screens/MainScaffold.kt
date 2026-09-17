@@ -69,6 +69,7 @@ import com.example.ui.viewmodels.BackupViewModel
 import com.example.ui.viewmodels.LyricEditorViewModel
 import com.example.ui.viewmodels.MultiTrackMixerViewModel
 import com.example.ui.viewmodels.RecordingsViewModel
+import com.example.ui.viewmodels.SettingsViewModel
 import com.example.ui.viewmodels.SongsViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -109,7 +110,8 @@ fun MainScaffold(
       audioFileManager = appContainer.audioFileManager,
       waveformAnalyzer = appContainer.waveformAnalyzer,
       previewPlayer = previewPlayer,
-      recorderEngine = recorderEngine
+      recorderEngine = recorderEngine,
+      settingsRepository = appContainer.settingsRepository
     )
   }
 
@@ -117,6 +119,17 @@ fun MainScaffold(
     BackupViewModel(appContainer.projectArchiveManager)
   }
   val backupUiState by backupViewModel.uiState.collectAsState()
+
+  val settingsViewModel = remember(appContainer) {
+    SettingsViewModel(
+      settingsRepository = appContainer.settingsRepository,
+      songRepository = appContainer.songRepository,
+      albumRepository = appContainer.albumRepository,
+      audioRepository = appContainer.audioRepository,
+      audioFileManager = appContainer.audioFileManager
+    )
+  }
+  val settingsUiState by settingsViewModel.uiState.collectAsState()
 
   LaunchedEffect(backupUiState.feedbackMessage) {
     backupUiState.feedbackMessage?.let { msg ->
@@ -271,6 +284,22 @@ fun MainScaffold(
               SettingsScreen(
                 currentThemeMode = currentThemeMode,
                 onThemeModeSelected = onThemeModeSelected,
+                fontSizeSp = settingsUiState.appSettings.fontSizeSp,
+                onFontSizeChanged = settingsViewModel::setFontSize,
+                lineSpacingMultiplier = settingsUiState.appSettings.lineSpacingMultiplier,
+                onLineSpacingChanged = settingsViewModel::setLineSpacing,
+                keepScreenAwakeDefault = settingsUiState.appSettings.keepScreenAwakeDefault,
+                onKeepScreenAwakeChanged = settingsViewModel::setKeepScreenAwakeDefault,
+                autosaveEnabled = settingsUiState.appSettings.autosaveEnabled,
+                onAutosaveChanged = settingsViewModel::setAutosaveEnabled,
+                recordingQuality = settingsUiState.appSettings.recordingQuality,
+                onRecordingQualityChanged = settingsViewModel::setRecordingQuality,
+                communicationModeEnabled = settingsUiState.appSettings.communicationModeEnabled,
+                onCommunicationModeChanged = settingsViewModel::setCommunicationModeEnabled,
+                defaultVolume = settingsUiState.appSettings.defaultVolume,
+                onDefaultVolumeChanged = settingsViewModel::setDefaultVolume,
+                storageInfo = settingsUiState.storageInfo,
+                onRefreshStorage = settingsViewModel::refreshStorageInfo,
                 isBusy = backupUiState.isBusy,
                 busyMessage = backupUiState.busyMessage,
                 onExportFullBackup = {
@@ -297,7 +326,11 @@ fun MainScaffold(
                   audioRepository = appContainer.audioRepository,
                   audioFileManager = appContainer.audioFileManager,
                   waveformAnalyzer = appContainer.waveformAnalyzer,
-                  beatPlayer = beatPlayer
+                  beatPlayer = beatPlayer,
+                  defaultFontSizeSp = settingsUiState.appSettings.fontSizeSp,
+                  defaultLineSpacingMultiplier = settingsUiState.appSettings.lineSpacingMultiplier,
+                  defaultKeepScreenOn = settingsUiState.appSettings.keepScreenAwakeDefault,
+                  autosaveEnabled = settingsUiState.appSettings.autosaveEnabled
                 )
               }
               LyricEditorScreen(
@@ -439,7 +472,33 @@ fun MainScaffold(
           composable(Screen.Settings.route) {
             SettingsScreen(
               currentThemeMode = currentThemeMode,
-              onThemeModeSelected = onThemeModeSelected
+              onThemeModeSelected = onThemeModeSelected,
+              fontSizeSp = settingsUiState.appSettings.fontSizeSp,
+              onFontSizeChanged = settingsViewModel::setFontSize,
+              lineSpacingMultiplier = settingsUiState.appSettings.lineSpacingMultiplier,
+              onLineSpacingChanged = settingsViewModel::setLineSpacing,
+              keepScreenAwakeDefault = settingsUiState.appSettings.keepScreenAwakeDefault,
+              onKeepScreenAwakeChanged = settingsViewModel::setKeepScreenAwakeDefault,
+              autosaveEnabled = settingsUiState.appSettings.autosaveEnabled,
+              onAutosaveChanged = settingsViewModel::setAutosaveEnabled,
+              recordingQuality = settingsUiState.appSettings.recordingQuality,
+              onRecordingQualityChanged = settingsViewModel::setRecordingQuality,
+              communicationModeEnabled = settingsUiState.appSettings.communicationModeEnabled,
+              onCommunicationModeChanged = settingsViewModel::setCommunicationModeEnabled,
+              defaultVolume = settingsUiState.appSettings.defaultVolume,
+              onDefaultVolumeChanged = settingsViewModel::setDefaultVolume,
+              storageInfo = settingsUiState.storageInfo,
+              onRefreshStorage = settingsViewModel::refreshStorageInfo,
+              isBusy = backupUiState.isBusy,
+              busyMessage = backupUiState.busyMessage,
+              onExportFullBackup = {
+                val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+                val date = dateFormat.format(Date())
+                exportFullBackupLauncher.launch("studio_backup_${date}.songproject")
+              },
+              onImportBackup = {
+                importArchiveLauncher.launch(arrayOf("*/*"))
+              }
             )
           }
           composable(
@@ -456,7 +515,11 @@ fun MainScaffold(
                 audioRepository = appContainer.audioRepository,
                 audioFileManager = appContainer.audioFileManager,
                 waveformAnalyzer = appContainer.waveformAnalyzer,
-                beatPlayer = beatPlayer
+                beatPlayer = beatPlayer,
+                defaultFontSizeSp = settingsUiState.appSettings.fontSizeSp,
+                defaultLineSpacingMultiplier = settingsUiState.appSettings.lineSpacingMultiplier,
+                defaultKeepScreenOn = settingsUiState.appSettings.keepScreenAwakeDefault,
+                autosaveEnabled = settingsUiState.appSettings.autosaveEnabled
               )
             }
             LyricEditorScreen(

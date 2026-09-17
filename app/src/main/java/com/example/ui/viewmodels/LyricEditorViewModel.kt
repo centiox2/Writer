@@ -89,10 +89,20 @@ class LyricEditorViewModel(
   private val audioFileManager: AudioFileManager? = null,
   private val waveformAnalyzer: WaveformAnalyzer? = null,
   private val beatPlayer: BeatPlayer? = null,
-  private val rhymeEngine: RhymeEngine = RhymeEngine()
+  private val rhymeEngine: RhymeEngine = RhymeEngine(),
+  defaultFontSizeSp: Float = 18f,
+  defaultLineSpacingMultiplier: Float = 1.5f,
+  defaultKeepScreenOn: Boolean = false,
+  private val autosaveEnabled: Boolean = true
 ) : ViewModel() {
 
-  private val _uiState = MutableStateFlow(LyricEditorUiState())
+  private val _uiState = MutableStateFlow(
+    LyricEditorUiState(
+      fontSizeSp = defaultFontSizeSp,
+      lineSpacingMultiplier = defaultLineSpacingMultiplier,
+      keepScreenOn = defaultKeepScreenOn
+    )
+  )
   val uiState: StateFlow<LyricEditorUiState> = _uiState.asStateFlow()
 
   // Undo / Redo history stacks
@@ -383,6 +393,7 @@ class LyricEditorViewModel(
   }
 
   private fun scheduleAutosave(text: String) {
+    if (!autosaveEnabled) return
     autosaveJob?.cancel()
     autosaveJob = viewModelScope.launch {
       delay(600L) // 600ms debounce

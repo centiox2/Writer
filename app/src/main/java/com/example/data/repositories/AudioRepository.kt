@@ -37,7 +37,8 @@ class AudioRepository(
     name: String,
     uri: String,
     type: TrackType,
-    duration: Long = 0L
+    duration: Long = 0L,
+    volume: Float = 1.0f
   ): AudioTrack {
     val track = AudioTrack(
       id = UUID.randomUUID().toString(),
@@ -46,6 +47,7 @@ class AudioRepository(
       uri = uri,
       type = type,
       duration = duration,
+      volume = volume,
       createdAt = System.currentTimeMillis()
     )
     audioTrackDao.insertTrack(track.toEntity())
@@ -114,7 +116,8 @@ class AudioRepository(
   suspend fun attachRecordingToMixer(
     recordingId: String,
     targetSongId: String? = null,
-    trackType: TrackType = TrackType.RECORDING
+    trackType: TrackType = TrackType.RECORDING,
+    volume: Float = 1.0f
   ): AudioTrack? {
     val recording = getRecordingByIdSync(recordingId) ?: return null
     val effectiveSongId = targetSongId ?: recording.songId
@@ -123,7 +126,8 @@ class AudioRepository(
       name = recording.name,
       uri = recording.uri,
       type = trackType,
-      duration = recording.duration
+      duration = recording.duration,
+      volume = volume
     )
   }
 

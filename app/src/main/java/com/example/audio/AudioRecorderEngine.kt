@@ -1,6 +1,7 @@
 package com.example.audio
 
 import android.content.Context
+import android.media.AudioManager
 import android.media.MediaRecorder
 import android.os.Build
 import android.util.Log
@@ -22,6 +23,21 @@ enum class RecordingState {
   RECORDING,
   PAUSED,
   STOPPED
+}
+
+/**
+ * Recording fidelity presets. Defaults preserve the app's original hardcoded
+ * capture settings (HIGH) so existing behavior is unchanged unless a user opts in.
+ */
+enum class RecordingQuality(
+  val label: String,
+  val bitRate: Int,
+  val sampleRate: Int,
+  val channels: Int
+) {
+  STANDARD(label = "Standard (128 kbps)", bitRate = 128_000, sampleRate = 44_100, channels = 2),
+  HIGH(label = "High (192 kbps)", bitRate = 192_000, sampleRate = 44_100, channels = 2),
+  STUDIO(label = "Studio (256 kbps)", bitRate = 256_000, sampleRate = 48_000, channels = 2)
 }
 
 data class RecorderStatus(
@@ -47,17 +63,35 @@ class AudioRecorderEngine(
   private var accumulatedDurationMs: Long = 0L
   private var currentFile: File? = null
 
+  private val audioManager: AudioManager? by lazy {
+    try { context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager } catch (e: Exception) { null }
+  }
+  private var previousAudioMode: Int? = null
+
   private val _status = MutableStateFlow(RecorderStatus())
   val status: StateFlow<RecorderStatus> = _status.asStateFlow()
 
   /**
    * Starts recording audio into the specified target file.
+   * [useCommunicationMode] routes audio through MODE_IN_COMMUNICATION to reduce
+   * earpiece/speaker bleed picked up by the mic during recording.
    */
-  fun startRecording(targetFile: File): Boolean {
+  fun startRecording(
+    targetFile: File,
+    quality: RecordingQuality = RecordingQuality.HIGH,
+    useCommunicationMode: Boolean = false
+  ): Boolean {
     stopAndRelease()
 
     currentFile = targetFile
     targetFile.parentFile?.mkdirs()
+
+    if (useCommunicationMode) {
+      try {
+        previousAudioMode = audioManager?.mode
+        audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
+      } catch (ignored: Exception) {}
+    }
 
     return try {
       val recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -71,9 +105,9 @@ class AudioRecorderEngine(
         setAudioSource(MediaRecorder.AudioSource.MIC)
         setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
         setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-        setAudioEncodingBitRate(192_000)
-        setAudioSamplingRate(44_100)
-        setAudioChannels(2)
+        setAudioEncodingBitRate(quality.bitRate)
+        setAudioSamplingRate(quality.sampleRate)
+        setAudioChannels(quality.channels)
         setOutputFile(targetFile.absolutePath)
         prepare()
         start()
@@ -165,6 +199,8 @@ class AudioRecorderEngine(
       mediaRecorder = null
     }
 
+    restoreAudioMode()
+
     _status.update {
       it.copy(
         state = RecordingState.STOPPED,
@@ -194,7 +230,16 @@ class AudioRecorderEngine(
     }
     currentFile = null
 
+    restoreAudioMode()
+
     _status.update { RecorderStatus(state = RecordingState.IDLE) }
+  }
+
+  private fun restoreAudioMode() {
+    if (previousAudioMode != null) {
+      try { audioManager?.mode = previousAudioMode ?: AudioManager.MODE_NORMAL } catch (ignored: Exception) {}
+      previousAudioMode = null
+    }
   }
 
   private fun startAmplitudeTicker(simulated: Boolean = false) {
@@ -234,6 +279,7 @@ class AudioRecorderEngine(
       mediaRecorder?.release()
     } catch (ignored: Exception) {}
     mediaRecorder = null
+    restoreAudioMode()
   }
 
   fun release() {
