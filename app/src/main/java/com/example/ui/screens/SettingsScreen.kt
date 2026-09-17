@@ -37,6 +37,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.FolderZip
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import com.example.ui.theme.StudioBlue
 import com.example.ui.theme.StudioMint
 import com.example.ui.theme.ThemeMode
@@ -45,6 +51,10 @@ import com.example.ui.theme.ThemeMode
 fun SettingsScreen(
   currentThemeMode: ThemeMode,
   onThemeModeSelected: (ThemeMode) -> Unit,
+  onExportFullBackup: () -> Unit = {},
+  onImportBackup: () -> Unit = {},
+  isBusy: Boolean = false,
+  busyMessage: String = "",
   modifier: Modifier = Modifier
 ) {
   val scrollState = rememberScrollState()
@@ -66,10 +76,107 @@ fun SettingsScreen(
       fontWeight = FontWeight.Bold
     )
     Text(
-      text = "App preferences, audio architecture & storage",
+      text = "App preferences, project portability & audio architecture",
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant
     )
+
+    Spacer(modifier = Modifier.height(20.dp))
+
+    // Project Backup & Portability Section
+    Text(
+      text = "Project Backup & Portability",
+      style = MaterialTheme.typography.titleMedium,
+      color = MaterialTheme.colorScheme.onBackground,
+      fontWeight = FontWeight.SemiBold
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Card(
+      modifier = Modifier.fillMaxWidth(),
+      shape = RoundedCornerShape(12.dp),
+      colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+      Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Box(
+            modifier = Modifier
+              .size(36.dp)
+              .clip(RoundedCornerShape(8.dp))
+              .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.FolderZip,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.primary,
+              modifier = Modifier.size(20.dp)
+            )
+          }
+          Spacer(modifier = Modifier.width(12.dp))
+          Column {
+            Text(
+              text = "Universal .songproject Archives",
+              style = MaterialTheme.typography.bodyMedium,
+              fontWeight = FontWeight.SemiBold
+            )
+            Text(
+              text = "Your creative work is never trapped in private storage. Back up your songs, tracks, audio takes, artwork, and lyrics with standard v1 archives.",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+          }
+        }
+
+        if (isBusy) {
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+              .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+          ) {
+            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            Text(
+              text = busyMessage.ifBlank { "Processing archive..." },
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+          }
+        }
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          Button(
+            onClick = onExportFullBackup,
+            enabled = !isBusy,
+            modifier = Modifier
+              .weight(1f)
+              .testTag("export_backup_button")
+          ) {
+            Icon(Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Full Backup")
+          }
+
+          OutlinedButton(
+            onClick = onImportBackup,
+            enabled = !isBusy,
+            modifier = Modifier
+              .weight(1f)
+              .testTag("import_backup_button")
+          ) {
+            Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Import / Restore")
+          }
+        }
+      }
+    }
 
     Spacer(modifier = Modifier.height(20.dp))
 

@@ -48,6 +48,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import com.example.audio.AudioRecorderEngine
 import com.example.audio.BeatPlayer
 import com.example.audio.RecordingPreviewPlayer
@@ -55,10 +60,12 @@ import com.example.audio.mixer.MultiTrackAudioMixer
 import com.example.data.AppContainer
 import com.example.ui.components.MultiTrackMixerScreen
 import com.example.ui.components.NewItemBottomSheet
+import com.example.ui.components.ProjectImportDialog
 import com.example.ui.navigation.Screen
 import com.example.ui.theme.StudioBlue
 import com.example.ui.theme.ThemeMode
 import com.example.ui.viewmodels.AlbumsViewModel
+import com.example.ui.viewmodels.BackupViewModel
 import com.example.ui.viewmodels.LyricEditorViewModel
 import com.example.ui.viewmodels.MultiTrackMixerViewModel
 import com.example.ui.viewmodels.RecordingsViewModel
@@ -81,6 +88,7 @@ fun MainScaffold(
   val isFullScreen = currentRoute.startsWith("lyric_editor") || currentRoute.startsWith("mixer")
   val snackbarHostState = remember { SnackbarHostState() }
   val scope = rememberCoroutineScope()
+  val context = LocalContext.current
 
   var showCreateSheet by remember { mutableStateOf(false) }
 
@@ -92,7 +100,6 @@ fun MainScaffold(
     AlbumsViewModel(appContainer.albumRepository, appContainer.songRepository)
   }
 
-  val context = LocalContext.current
   val recordingsViewModel = remember(appContainer) {
     val previewPlayer = RecordingPreviewPlayer(context)
     val recorderEngine = AudioRecorderEngine(context)
@@ -103,6 +110,60 @@ fun MainScaffold(
       waveformAnalyzer = appContainer.waveformAnalyzer,
       previewPlayer = previewPlayer,
       recorderEngine = recorderEngine
+    )
+  }
+
+  val backupViewModel = remember(appContainer) {
+    BackupViewModel(appContainer.projectArchiveManager)
+  }
+  val backupUiState by backupViewModel.uiState.collectAsState()
+
+  LaunchedEffect(backupUiState.feedbackMessage) {
+    backupUiState.feedbackMessage?.let { msg ->
+      Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+      backupViewModel.clearFeedback()
+    }
+  }
+
+  var pendingExportSongId by remember { mutableStateOf<String?>(null) }
+  val exportSongLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+    if (uri != null && pendingExportSongId != null) {
+      backupViewModel.exportSongToUri(pendingExportSongId!!, uri, context.contentResolver)
+    }
+    pendingExportSongId = null
+  }
+
+  var pendingExportAlbumId by remember { mutableStateOf<String?>(null) }
+  val exportAlbumLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+    if (uri != null && pendingExportAlbumId != null) {
+      backupViewModel.exportAlbumToUri(pendingExportAlbumId!!, uri, context.contentResolver)
+    }
+    pendingExportAlbumId = null
+  }
+
+  val exportFullBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+    if (uri != null) {
+      backupViewModel.exportFullBackupToUri(uri, context.contentResolver)
+    }
+  }
+
+  val importArchiveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    if (uri != null) {
+      backupViewModel.validateSelectedFile(uri, context.contentResolver)
+    }
+  }
+
+  if (backupUiState.validationReport != null) {
+    ProjectImportDialog(
+      report = backupUiState.validationReport!!,
+      selectedMode = backupUiState.selectedImportMode,
+      onModeSelected = { backupViewModel.setImportMode(it) },
+      onConfirm = { 
+        backupViewModel.confirmImport(context.contentResolver) {
+          // Refresh views after import not needed if observing flow
+        }
+      },
+      onDismiss = { backupViewModel.dismissValidationDialog() }
     )
   }
 
@@ -179,7 +240,14 @@ fun MainScaffold(
                 onOpenSong = { songId ->
                   navController.navigate(Screen.LyricEditor.createRoute(songId))
                 },
-                onNewSong = { showCreateSheet = true }
+                onNewSong = { showCreateSheet = true },
+                onExportSong = { songId ->
+                  pendingExportSongId = songId
+                  exportSongLauncher.launch("song_${songId}.songproject")
+                },
+                onImportProject = {
+                  importArchiveLauncher.launch(arrayOf("*/*"))
+                }
               )
             }
             composable(Screen.Albums.route) {
@@ -187,6 +255,10 @@ fun MainScaffold(
                 viewModel = albumsViewModel,
                 onOpenSong = { songId ->
                   navController.navigate(Screen.LyricEditor.createRoute(songId))
+                },
+                onExportAlbum = { albumId ->
+                  pendingExportAlbumId = albumId
+                  exportAlbumLauncher.launch("album_${albumId}.songproject")
                 }
               )
             }
@@ -198,7 +270,17 @@ fun MainScaffold(
             composable(Screen.Settings.route) {
               SettingsScreen(
                 currentThemeMode = currentThemeMode,
-                onThemeModeSelected = onThemeModeSelected
+                onThemeModeSelected = onThemeModeSelected,
+                isBusy = backupUiState.isBusy,
+                busyMessage = backupUiState.busyMessage,
+                onExportFullBackup = {
+                  val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+                  val date = dateFormat.format(Date())
+                  exportFullBackupLauncher.launch("studio_backup_${date}.songproject")
+                },
+                onImportBackup = {
+                  importArchiveLauncher.launch(arrayOf("*/*"))
+                }
               )
             }
             composable(
@@ -223,6 +305,10 @@ fun MainScaffold(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToMixer = { targetSongId ->
                   navController.navigate(Screen.MultiTrackMixer.createRoute(targetSongId))
+                },
+                onExportSong = { sid ->
+                  pendingExportSongId = sid
+                  exportSongLauncher.launch("song_${sid}.songproject")
                 }
               )
             }

@@ -67,6 +67,8 @@ import androidx.compose.ui.unit.sp
 import com.example.data.repositories.SongSortOrder
 import com.example.domain.models.Album
 import com.example.domain.models.Song
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FolderZip
 import com.example.ui.components.DeleteConfirmDialog
 import com.example.ui.components.MoveSongToAlbumDialog
 import com.example.ui.components.RenameSongDialog
@@ -86,6 +88,8 @@ fun SongsScreen(
   viewModel: SongsViewModel,
   onOpenSong: (String) -> Unit = {},
   onNewSong: () -> Unit = {},
+  onExportSong: (String) -> Unit = {},
+  onImportProject: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -105,7 +109,7 @@ fun SongsScreen(
   ) {
     Spacer(modifier = Modifier.height(12.dp))
 
-    // Header Title and Sort Button
+    // Header Title and Sort / Import Buttons
     Row(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.SpaceBetween,
@@ -125,22 +129,34 @@ fun SongsScreen(
         )
       }
 
-      Box {
+      Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(
-          onClick = { showSortMenu = true },
-          modifier = Modifier.testTag("sort_button")
+          onClick = onImportProject,
+          modifier = Modifier.testTag("import_song_project_button")
         ) {
           Icon(
-            imageVector = Icons.Default.Sort,
-            contentDescription = "Sort songs",
+            imageVector = Icons.Default.FileDownload,
+            contentDescription = "Import .songproject",
             tint = StudioBlue
           )
         }
+        
+        Box {
+          IconButton(
+            onClick = { showSortMenu = true },
+            modifier = Modifier.testTag("sort_button")
+          ) {
+            Icon(
+              imageVector = Icons.Default.Sort,
+              contentDescription = "Sort songs",
+              tint = StudioBlue
+            )
+          }
 
-        DropdownMenu(
-          expanded = showSortMenu,
-          onDismissRequest = { showSortMenu = false }
-        ) {
+          DropdownMenu(
+            expanded = showSortMenu,
+            onDismissRequest = { showSortMenu = false }
+          ) {
           DropdownMenuItem(
             text = {
               Text(
@@ -191,6 +207,7 @@ fun SongsScreen(
           )
         }
       }
+    }
     }
 
     Spacer(modifier = Modifier.height(12.dp))
@@ -351,7 +368,8 @@ fun SongsScreen(
             onDuplicate = { viewModel.duplicateSong(song.id) },
             onMoveToAlbum = { songToMove = song },
             onToggleArchive = { viewModel.toggleArchived(song.id, !song.archived) },
-            onDelete = { songToDelete = song }
+            onDelete = { songToDelete = song },
+            onExportSong = { onExportSong(song.id) }
           )
         }
         item {
@@ -412,6 +430,7 @@ fun SongItemCard(
   onMoveToAlbum: () -> Unit,
   onToggleArchive: () -> Unit,
   onDelete: () -> Unit,
+  onExportSong: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   var showMenu by remember { mutableStateOf(false) }
@@ -520,6 +539,15 @@ fun SongItemCard(
             expanded = showMenu,
             onDismissRequest = { showMenu = false }
           ) {
+            DropdownMenuItem(
+              text = { Text("Export .songproject") },
+              leadingIcon = { Icon(Icons.Default.FolderZip, contentDescription = null, tint = StudioBlue, modifier = Modifier.size(18.dp)) },
+              onClick = {
+                showMenu = false
+                onExportSong()
+              },
+              modifier = Modifier.testTag("menu_export_${song.id}")
+            )
             DropdownMenuItem(
               text = { Text("Rename") },
               leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp)) },

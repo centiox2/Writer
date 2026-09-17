@@ -115,12 +115,15 @@ import com.example.ui.viewmodels.LyricEditorUiState
 import com.example.ui.viewmodels.LyricEditorViewModel
 import com.example.ui.viewmodels.SaveStatus
 
+import androidx.compose.material.icons.filled.FolderZip
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LyricEditorScreen(
   viewModel: LyricEditorViewModel,
   onNavigateBack: () -> Unit,
   onNavigateToMixer: (String) -> Unit = {},
+  onExportSong: (String) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -332,6 +335,17 @@ fun LyricEditorScreen(
               expanded = showMenu,
               onDismissRequest = { showMenu = false }
             ) {
+              DropdownMenuItem(
+                text = { Text("Export .songproject") },
+                leadingIcon = { Icon(Icons.Default.FolderZip, contentDescription = null, tint = StudioBlue) },
+                onClick = {
+                  showMenu = false
+                  viewModel.saveNow()
+                  uiState.song?.id?.let { onExportSong(it) }
+                },
+                modifier = Modifier.testTag("editor_export_songproject")
+              )
+
               DropdownMenuItem(
                 text = { Text("Formatting & Font") },
                 leadingIcon = { Icon(Icons.Default.FormatSize, contentDescription = null) },

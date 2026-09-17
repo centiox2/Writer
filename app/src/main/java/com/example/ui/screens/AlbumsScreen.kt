@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.FolderZip
 import com.example.domain.models.Album
 import com.example.domain.models.Song
 import com.example.ui.components.AddSongsToAlbumDialog
@@ -69,6 +70,7 @@ import java.util.Locale
 fun AlbumsScreen(
   viewModel: AlbumsViewModel,
   onOpenSong: (String) -> Unit = {},
+  onExportAlbum: (String) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val albums by viewModel.albums.collectAsState()
@@ -97,6 +99,7 @@ fun AlbumsScreen(
       onRemoveSong = { song -> songToRemoveFromAlbum = song },
       onEditAlbum = { albumToEdit = selectedAlbum },
       onDeleteAlbum = { albumToDelete = selectedAlbum },
+      onExportAlbum = { onExportAlbum(selectedAlbum.id) },
       modifier = modifier
     )
   } else {
@@ -195,7 +198,8 @@ fun AlbumsScreen(
               album = album,
               onClick = { viewModel.selectAlbum(album.id) },
               onEdit = { albumToEdit = album },
-              onDelete = { albumToDelete = album }
+              onDelete = { albumToDelete = album },
+              onExport = { onExportAlbum(album.id) }
             )
           }
           item {
@@ -286,6 +290,7 @@ fun AlbumItemCard(
   onClick: () -> Unit,
   onEdit: () -> Unit,
   onDelete: () -> Unit,
+  onExport: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   var showMenu by remember { mutableStateOf(false) }
@@ -359,6 +364,15 @@ fun AlbumItemCard(
           onDismissRequest = { showMenu = false }
         ) {
           DropdownMenuItem(
+            text = { Text("Export Album (.songproject)") },
+            leadingIcon = { Icon(Icons.Default.FolderZip, contentDescription = null, tint = StudioBlue, modifier = Modifier.size(18.dp)) },
+            onClick = {
+              showMenu = false
+              onExport()
+            },
+            modifier = Modifier.testTag("menu_export_album_${album.id}")
+          )
+          DropdownMenuItem(
             text = { Text("Edit Album") },
             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp)) },
             onClick = {
@@ -390,6 +404,7 @@ fun AlbumDetailView(
   onRemoveSong: (Song) -> Unit,
   onEditAlbum: () -> Unit,
   onDeleteAlbum: () -> Unit,
+  onExportAlbum: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   var showMenu by remember { mutableStateOf(false) }
@@ -432,6 +447,14 @@ fun AlbumDetailView(
         }
 
         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+          DropdownMenuItem(
+            text = { Text("Export Album (.songproject)") },
+            leadingIcon = { Icon(Icons.Default.FolderZip, contentDescription = null, tint = StudioBlue, modifier = Modifier.size(18.dp)) },
+            onClick = {
+              showMenu = false
+              onExportAlbum()
+            }
+          )
           DropdownMenuItem(
             text = { Text("Edit Album") },
             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp)) },

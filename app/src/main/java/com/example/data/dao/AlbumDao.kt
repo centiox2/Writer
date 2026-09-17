@@ -24,6 +24,9 @@ interface AlbumDao {
   @Query("SELECT * FROM albums ORDER BY updatedAt DESC")
   fun getAllAlbums(): Flow<List<AlbumEntity>>
 
+  @Query("SELECT * FROM albums ORDER BY updatedAt DESC")
+  suspend fun getAllAlbumsSync(): List<AlbumEntity>
+
   @Query("""
     SELECT 
       a.id, a.name, a.description, a.artworkUri, a.createdAt, a.updatedAt,
