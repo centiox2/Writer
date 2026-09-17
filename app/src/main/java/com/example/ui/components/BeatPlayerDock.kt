@@ -21,6 +21,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.automirrored.filled.VolumeMute
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Delete
@@ -33,10 +37,6 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay5
 import androidx.compose.material.icons.filled.Forward5
-import androidx.compose.material.icons.filled.VolumeDown
-import androidx.compose.material.icons.filled.VolumeMute
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -147,12 +147,16 @@ fun BeatPlayerDock(
               Text(
                 text = "Backing Beat / Instrumental",
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
               )
               Text(
                 text = "MP3, WAV, M4A, OGG, FLAC",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
               )
             }
           }
@@ -229,9 +233,9 @@ fun BeatPlayerDock(
                 .testTag("beat_volume_button")
             ) {
               val volIcon = when {
-                playbackState.isMuted || playbackState.volume == 0f -> Icons.Default.VolumeOff
-                playbackState.volume < 0.5f -> Icons.Default.VolumeDown
-                else -> Icons.Default.VolumeUp
+                playbackState.isMuted || playbackState.volume == 0f -> Icons.AutoMirrored.Filled.VolumeOff
+                playbackState.volume < 0.5f -> Icons.AutoMirrored.Filled.VolumeDown
+                else -> Icons.AutoMirrored.Filled.VolumeUp
               }
               Icon(
                 imageVector = volIcon,
@@ -300,7 +304,7 @@ fun BeatPlayerDock(
                 modifier = Modifier.size(32.dp)
               ) {
                 Icon(
-                  imageVector = if (playbackState.isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
+                  imageVector = if (playbackState.isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeMute,
                   contentDescription = if (playbackState.isMuted) "Unmute" else "Mute",
                   tint = if (playbackState.isMuted) StudioOrange else MaterialTheme.colorScheme.onSurfaceVariant,
                   modifier = Modifier.size(18.dp)
@@ -481,7 +485,7 @@ private fun AudioOutputBadge(route: AudioOutputRoute) {
   val (icon, label, tint) = when (route) {
     AudioOutputRoute.WIRED_HEADSET -> Triple(Icons.Default.Headphones, "Headphones", StudioMint)
     AudioOutputRoute.BLUETOOTH -> Triple(Icons.Default.Bluetooth, "Bluetooth", StudioBlue)
-    AudioOutputRoute.SPEAKER -> Triple(Icons.Default.VolumeUp, "Speaker", MaterialTheme.colorScheme.onSurfaceVariant)
+    AudioOutputRoute.SPEAKER -> Triple(Icons.AutoMirrored.Filled.VolumeUp, "Speaker", MaterialTheme.colorScheme.onSurfaceVariant)
   }
 
   Row(

@@ -525,7 +525,11 @@ private fun SettingsSliderRow(
       value = value,
       onValueChange = onValueChange,
       valueRange = valueRange,
-      colors = SliderDefaults.colors(thumbColor = StudioBlue, activeTrackColor = StudioBlue),
+      colors = SliderDefaults.colors(
+        thumbColor = StudioBlue,
+        activeTrackColor = StudioBlue,
+        inactiveTrackColor = StudioBlue.copy(alpha = 0.24f)
+      ),
       modifier = Modifier.fillMaxWidth().testTag(testTag)
     )
   }

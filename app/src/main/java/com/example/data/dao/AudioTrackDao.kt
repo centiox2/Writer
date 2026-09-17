@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AudioTrackDao {
-  @Query("SELECT * FROM audio_tracks WHERE songId = :songId ORDER BY createdAt ASC")
+  @Query("SELECT * FROM audio_tracks WHERE songId = :songId ORDER BY createdAt ASC, rowid ASC")
   fun getTracksForSong(songId: String): Flow<List<AudioTrackEntity>>
 
   @Query("SELECT * FROM audio_tracks WHERE songId = :songId AND type = :type LIMIT 1")

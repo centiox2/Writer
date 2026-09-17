@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +31,7 @@ import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -184,196 +186,207 @@ fun MainScaffold(
     val isExpandedLayout = maxWidth >= 600.dp
 
     if (isExpandedLayout) {
-      // Tablet / Landscape Layout: Navigation Rail on the left
-      Row(modifier = Modifier.fillMaxSize()) {
-        if (!isFullScreen) {
-          NavigationRail(
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            header = {
-              Spacer(modifier = Modifier.height(8.dp))
-              FloatingActionButton(
-                onClick = { showCreateSheet = true },
-                containerColor = StudioBlue,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                elevation = FloatingActionButtonDefaults.elevation(4.dp),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.testTag("tablet_fab_new_project")
-              ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Create New Project")
-              }
-            },
-            modifier = Modifier.testTag("navigation_rail")
-          ) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Screen.bottomNavItems.forEach { screen ->
-              val selected = currentRoute == screen.route
-              NavigationRailItem(
-                selected = selected,
-                onClick = {
-                  navController.navigate(screen.route) {
-                    popUpTo(navController.graph.findStartDestination().id) {
-                      saveState = true
+      // Tablet / Landscape Layout: Navigation Rail on the left.
+      // The Surface is required: without one, LocalContentColor defaults to black and any
+      // text that doesn't set an explicit color renders invisible on the dark background.
+      Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+      ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+          if (!isFullScreen) {
+            NavigationRail(
+              containerColor = MaterialTheme.colorScheme.surface,
+              contentColor = MaterialTheme.colorScheme.onSurface,
+              header = {
+                Spacer(modifier = Modifier.height(8.dp))
+                FloatingActionButton(
+                  onClick = { showCreateSheet = true },
+                  containerColor = StudioBlue,
+                  contentColor = MaterialTheme.colorScheme.onPrimary,
+                  elevation = FloatingActionButtonDefaults.elevation(4.dp),
+                  shape = RoundedCornerShape(16.dp),
+                  modifier = Modifier.testTag("tablet_fab_new_project")
+                ) {
+                  Icon(imageVector = Icons.Default.Add, contentDescription = "Create New Project")
+                }
+              },
+              modifier = Modifier.testTag("navigation_rail")
+            ) {
+              Spacer(modifier = Modifier.height(16.dp))
+              Screen.bottomNavItems.forEach { screen ->
+                val selected = currentRoute == screen.route
+                NavigationRailItem(
+                  selected = selected,
+                  onClick = {
+                    navController.navigate(screen.route) {
+                      popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                      }
+                      launchSingleTop = true
+                      restoreState = true
                     }
-                    launchSingleTop = true
-                    restoreState = true
-                  }
-                },
-                icon = {
-                  Icon(
-                    imageVector = screen.icon,
-                    contentDescription = screen.title
+                  },
+                  icon = {
+                    Icon(
+                      imageVector = screen.icon,
+                      contentDescription = screen.title
+                    )
+                  },
+                  label = { Text(screen.title) },
+                  modifier = Modifier.testTag("nav_rail_item_${screen.route}"),
+                  colors = NavigationRailItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedTextColor = StudioBlue,
+                    indicatorColor = StudioBlue
                   )
-                },
-                label = { Text(screen.title) },
-                modifier = Modifier.testTag("nav_rail_item_${screen.route}"),
-                colors = NavigationRailItemDefaults.colors(
-                  selectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                  selectedTextColor = StudioBlue,
-                  indicatorColor = StudioBlue
                 )
-              )
+              }
             }
           }
-        }
 
-        Box(
-          modifier = Modifier
-            .weight(1f)
-            .fillMaxHeight()
-        ) {
-          NavHost(
-            navController = navController,
-            startDestination = Screen.Songs.route,
-            modifier = Modifier.fillMaxSize()
+          Box(
+            modifier = Modifier
+              .weight(1f)
+              .fillMaxHeight()
+              // The expanded layout has no Scaffold of its own, so tab destinations would
+              // otherwise draw under the system bars in edge-to-edge mode. Full-screen
+              // destinations (editor/mixer) bring their own Scaffold and handle insets.
+              .then(if (isFullScreen) Modifier else Modifier.systemBarsPadding())
           ) {
-            composable(Screen.Songs.route) {
-              SongsScreen(
-                viewModel = songsViewModel,
-                onOpenSong = { songId ->
-                  navController.navigate(Screen.LyricEditor.createRoute(songId))
-                },
-                onNewSong = { showCreateSheet = true },
-                onExportSong = { songId ->
-                  pendingExportSongId = songId
-                  exportSongLauncher.launch("song_${songId}.songproject")
-                },
-                onImportProject = {
-                  importArchiveLauncher.launch(arrayOf("*/*"))
-                }
-              )
-            }
-            composable(Screen.Albums.route) {
-              AlbumsScreen(
-                viewModel = albumsViewModel,
-                onOpenSong = { songId ->
-                  navController.navigate(Screen.LyricEditor.createRoute(songId))
-                },
-                onExportAlbum = { albumId ->
-                  pendingExportAlbumId = albumId
-                  exportAlbumLauncher.launch("album_${albumId}.songproject")
-                }
-              )
-            }
-            composable(Screen.Recordings.route) {
-              RecordingsScreen(
-                viewModel = recordingsViewModel
-              )
-            }
-            composable(Screen.Settings.route) {
-              SettingsScreen(
-                currentThemeMode = currentThemeMode,
-                onThemeModeSelected = onThemeModeSelected,
-                fontSizeSp = settingsUiState.appSettings.fontSizeSp,
-                onFontSizeChanged = settingsViewModel::setFontSize,
-                lineSpacingMultiplier = settingsUiState.appSettings.lineSpacingMultiplier,
-                onLineSpacingChanged = settingsViewModel::setLineSpacing,
-                keepScreenAwakeDefault = settingsUiState.appSettings.keepScreenAwakeDefault,
-                onKeepScreenAwakeChanged = settingsViewModel::setKeepScreenAwakeDefault,
-                autosaveEnabled = settingsUiState.appSettings.autosaveEnabled,
-                onAutosaveChanged = settingsViewModel::setAutosaveEnabled,
-                recordingQuality = settingsUiState.appSettings.recordingQuality,
-                onRecordingQualityChanged = settingsViewModel::setRecordingQuality,
-                communicationModeEnabled = settingsUiState.appSettings.communicationModeEnabled,
-                onCommunicationModeChanged = settingsViewModel::setCommunicationModeEnabled,
-                defaultVolume = settingsUiState.appSettings.defaultVolume,
-                onDefaultVolumeChanged = settingsViewModel::setDefaultVolume,
-                storageInfo = settingsUiState.storageInfo,
-                onRefreshStorage = settingsViewModel::refreshStorageInfo,
-                isBusy = backupUiState.isBusy,
-                busyMessage = backupUiState.busyMessage,
-                onExportFullBackup = {
-                  val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
-                  val date = dateFormat.format(Date())
-                  exportFullBackupLauncher.launch("studio_backup_${date}.songproject")
-                },
-                onImportBackup = {
-                  importArchiveLauncher.launch(arrayOf("*/*"))
-                }
-              )
-            }
-            composable(
-              route = Screen.LyricEditor.route,
-              arguments = listOf(navArgument("songId") { type = NavType.StringType })
-            ) { backStackEntry ->
-              val songId = backStackEntry.arguments?.getString("songId") ?: ""
-              val context = LocalContext.current
-              val lyricEditorViewModel = remember(songId) {
-                val beatPlayer = BeatPlayer(context)
-                LyricEditorViewModel(
-                  songId = songId,
-                  songRepository = appContainer.songRepository,
-                  audioRepository = appContainer.audioRepository,
-                  audioFileManager = appContainer.audioFileManager,
-                  waveformAnalyzer = appContainer.waveformAnalyzer,
-                  beatPlayer = beatPlayer,
-                  defaultFontSizeSp = settingsUiState.appSettings.fontSizeSp,
-                  defaultLineSpacingMultiplier = settingsUiState.appSettings.lineSpacingMultiplier,
-                  defaultKeepScreenOn = settingsUiState.appSettings.keepScreenAwakeDefault,
-                  autosaveEnabled = settingsUiState.appSettings.autosaveEnabled
+            NavHost(
+              navController = navController,
+              startDestination = Screen.Songs.route,
+              modifier = Modifier.fillMaxSize()
+            ) {
+              composable(Screen.Songs.route) {
+                SongsScreen(
+                  viewModel = songsViewModel,
+                  onOpenSong = { songId ->
+                    navController.navigate(Screen.LyricEditor.createRoute(songId))
+                  },
+                  onNewSong = { showCreateSheet = true },
+                  onExportSong = { songId ->
+                    pendingExportSongId = songId
+                    exportSongLauncher.launch("song_${songId}.songproject")
+                  },
+                  onImportProject = {
+                    importArchiveLauncher.launch(arrayOf("*/*"))
+                  }
                 )
               }
-              LyricEditorScreen(
-                viewModel = lyricEditorViewModel,
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToMixer = { targetSongId ->
-                  navController.navigate(Screen.MultiTrackMixer.createRoute(targetSongId))
-                },
-                onExportSong = { sid ->
-                  pendingExportSongId = sid
-                  exportSongLauncher.launch("song_${sid}.songproject")
-                }
-              )
-            }
-            composable(
-              route = Screen.MultiTrackMixer.route,
-              arguments = listOf(navArgument("songId") { type = NavType.StringType })
-            ) { backStackEntry ->
-              val songId = backStackEntry.arguments?.getString("songId") ?: ""
-              val context = LocalContext.current
-              val mixerViewModel = remember(songId) {
-                val mixer = MultiTrackAudioMixer(context)
-                MultiTrackMixerViewModel(
-                  songId = songId,
-                  songRepository = appContainer.songRepository,
-                  audioRepository = appContainer.audioRepository,
-                  audioFileManager = appContainer.audioFileManager,
-                  waveformAnalyzer = appContainer.waveformAnalyzer,
-                  wavMixdownExporter = appContainer.wavMixdownExporter,
-                  mixer = mixer
+              composable(Screen.Albums.route) {
+                AlbumsScreen(
+                  viewModel = albumsViewModel,
+                  onOpenSong = { songId ->
+                    navController.navigate(Screen.LyricEditor.createRoute(songId))
+                  },
+                  onExportAlbum = { albumId ->
+                    pendingExportAlbumId = albumId
+                    exportAlbumLauncher.launch("album_${albumId}.songproject")
+                  }
                 )
               }
-              MultiTrackMixerScreen(
-                viewModel = mixerViewModel,
-                onNavigateBack = { navController.popBackStack() }
-              )
+              composable(Screen.Recordings.route) {
+                RecordingsScreen(
+                  viewModel = recordingsViewModel
+                )
+              }
+              composable(Screen.Settings.route) {
+                SettingsScreen(
+                  currentThemeMode = currentThemeMode,
+                  onThemeModeSelected = onThemeModeSelected,
+                  fontSizeSp = settingsUiState.appSettings.fontSizeSp,
+                  onFontSizeChanged = settingsViewModel::setFontSize,
+                  lineSpacingMultiplier = settingsUiState.appSettings.lineSpacingMultiplier,
+                  onLineSpacingChanged = settingsViewModel::setLineSpacing,
+                  keepScreenAwakeDefault = settingsUiState.appSettings.keepScreenAwakeDefault,
+                  onKeepScreenAwakeChanged = settingsViewModel::setKeepScreenAwakeDefault,
+                  autosaveEnabled = settingsUiState.appSettings.autosaveEnabled,
+                  onAutosaveChanged = settingsViewModel::setAutosaveEnabled,
+                  recordingQuality = settingsUiState.appSettings.recordingQuality,
+                  onRecordingQualityChanged = settingsViewModel::setRecordingQuality,
+                  communicationModeEnabled = settingsUiState.appSettings.communicationModeEnabled,
+                  onCommunicationModeChanged = settingsViewModel::setCommunicationModeEnabled,
+                  defaultVolume = settingsUiState.appSettings.defaultVolume,
+                  onDefaultVolumeChanged = settingsViewModel::setDefaultVolume,
+                  storageInfo = settingsUiState.storageInfo,
+                  onRefreshStorage = settingsViewModel::refreshStorageInfo,
+                  isBusy = backupUiState.isBusy,
+                  busyMessage = backupUiState.busyMessage,
+                  onExportFullBackup = {
+                    val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+                    val date = dateFormat.format(Date())
+                    exportFullBackupLauncher.launch("studio_backup_${date}.songproject")
+                  },
+                  onImportBackup = {
+                    importArchiveLauncher.launch(arrayOf("*/*"))
+                  }
+                )
+              }
+              composable(
+                route = Screen.LyricEditor.route,
+                arguments = listOf(navArgument("songId") { type = NavType.StringType })
+              ) { backStackEntry ->
+                val songId = backStackEntry.arguments?.getString("songId") ?: ""
+                val context = LocalContext.current
+                val lyricEditorViewModel = remember(songId) {
+                  val beatPlayer = BeatPlayer(context)
+                  LyricEditorViewModel(
+                    songId = songId,
+                    songRepository = appContainer.songRepository,
+                    audioRepository = appContainer.audioRepository,
+                    audioFileManager = appContainer.audioFileManager,
+                    waveformAnalyzer = appContainer.waveformAnalyzer,
+                    beatPlayer = beatPlayer,
+                    defaultFontSizeSp = settingsUiState.appSettings.fontSizeSp,
+                    defaultLineSpacingMultiplier = settingsUiState.appSettings.lineSpacingMultiplier,
+                    defaultKeepScreenOn = settingsUiState.appSettings.keepScreenAwakeDefault,
+                    autosaveEnabled = settingsUiState.appSettings.autosaveEnabled
+                  )
+                }
+                LyricEditorScreen(
+                  viewModel = lyricEditorViewModel,
+                  onNavigateBack = { navController.popBackStack() },
+                  onNavigateToMixer = { targetSongId ->
+                    navController.navigate(Screen.MultiTrackMixer.createRoute(targetSongId))
+                  },
+                  onExportSong = { sid ->
+                    pendingExportSongId = sid
+                    exportSongLauncher.launch("song_${sid}.songproject")
+                  }
+                )
+              }
+              composable(
+                route = Screen.MultiTrackMixer.route,
+                arguments = listOf(navArgument("songId") { type = NavType.StringType })
+              ) { backStackEntry ->
+                val songId = backStackEntry.arguments?.getString("songId") ?: ""
+                val context = LocalContext.current
+                val mixerViewModel = remember(songId) {
+                  val mixer = MultiTrackAudioMixer(context)
+                  MultiTrackMixerViewModel(
+                    songId = songId,
+                    songRepository = appContainer.songRepository,
+                    audioRepository = appContainer.audioRepository,
+                    audioFileManager = appContainer.audioFileManager,
+                    waveformAnalyzer = appContainer.waveformAnalyzer,
+                    wavMixdownExporter = appContainer.wavMixdownExporter,
+                    mixer = mixer
+                  )
+                }
+                MultiTrackMixerScreen(
+                  viewModel = mixerViewModel,
+                  onNavigateBack = { navController.popBackStack() }
+                )
+              }
             }
-          }
 
-          SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.padding(16.dp)
-          )
+            SnackbarHost(
+              hostState = snackbarHostState,
+              modifier = Modifier.padding(16.dp)
+            )
+          }
         }
       }
     } else {

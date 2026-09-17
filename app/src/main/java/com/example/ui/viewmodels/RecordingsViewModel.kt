@@ -492,7 +492,11 @@ class RecordingsViewModel(
   }
 
   fun clearMessage() {
-    _uiState.update { it.copy(message = null, errorMessage = null) }
+    _uiState.update { it.copy(message = null) }
+  }
+
+  fun clearErrorMessage() {
+    _uiState.update { it.copy(errorMessage = null) }
   }
 
   override fun onCleared() {

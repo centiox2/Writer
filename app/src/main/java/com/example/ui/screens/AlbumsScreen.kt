@@ -429,13 +429,18 @@ fun AlbumDetailView(
           onClick = onBack,
           modifier = Modifier.testTag("album_detail_back_button")
         ) {
-          Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to Albums")
+          Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = "Back to Albums",
+            tint = MaterialTheme.colorScheme.onBackground
+          )
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
           text = album.name,
           style = MaterialTheme.typography.titleLarge,
           fontWeight = FontWeight.Bold,
+          color = MaterialTheme.colorScheme.onBackground,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis
         )
@@ -443,7 +448,11 @@ fun AlbumDetailView(
 
       Box {
         IconButton(onClick = { showMenu = true }) {
-          Icon(imageVector = Icons.Default.MoreVert, contentDescription = "Album actions")
+          Icon(
+            imageVector = Icons.Default.MoreVert,
+            contentDescription = "Album actions",
+            tint = MaterialTheme.colorScheme.onBackground
+          )
         }
 
         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
@@ -523,7 +532,8 @@ fun AlbumDetailView(
       Text(
         text = "Tracklist",
         style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onBackground
       )
 
       Button(
@@ -550,7 +560,8 @@ fun AlbumDetailView(
           Text(
             text = "No songs in this album yet",
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground
           )
           Spacer(modifier = Modifier.height(4.dp))
           Text(

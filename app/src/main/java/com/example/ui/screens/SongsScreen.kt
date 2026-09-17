@@ -21,13 +21,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -35,7 +36,6 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -152,7 +152,7 @@ fun SongsScreen(
             modifier = Modifier.testTag("sort_button")
           ) {
             Icon(
-              imageVector = Icons.Default.Sort,
+              imageVector = Icons.AutoMirrored.Filled.Sort,
               contentDescription = "Sort songs",
               tint = StudioBlue
             )
@@ -575,7 +575,7 @@ fun SongItemCard(
             )
             DropdownMenuItem(
               text = { Text("Assign to Album") },
-              leadingIcon = { Icon(Icons.Default.DriveFileMove, contentDescription = null, modifier = Modifier.size(18.dp)) },
+              leadingIcon = { Icon(Icons.AutoMirrored.Filled.DriveFileMove, contentDescription = null, modifier = Modifier.size(18.dp)) },
               onClick = {
                 showMenu = false
                 onMoveToAlbum()
@@ -639,7 +639,10 @@ fun SongItemCard(
         verticalAlignment = Alignment.CenterVertically
       ) {
         // Audio & Recording Indicators
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          modifier = Modifier.weight(1f, fill = false)
+        ) {
           if (song.trackCount > 0) {
             Row(
               modifier = Modifier
@@ -659,7 +662,8 @@ fun SongItemCard(
                 text = "${song.trackCount} ${if (song.trackCount == 1) "track" else "tracks"}",
                 style = MaterialTheme.typography.labelSmall,
                 color = StudioBlue,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                maxLines = 1
               )
             }
           }
@@ -683,17 +687,22 @@ fun SongItemCard(
                 text = "${song.recordingCount} ${if (song.recordingCount == 1) "take" else "takes"}",
                 style = MaterialTheme.typography.labelSmall,
                 color = StudioMint,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                maxLines = 1
               )
             }
           }
         }
 
+        Spacer(modifier = Modifier.width(8.dp))
+
         // Last Modified Date
         Text(
           text = "Updated $formattedDate",
           style = MaterialTheme.typography.labelSmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+          color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis
         )
       }
     }

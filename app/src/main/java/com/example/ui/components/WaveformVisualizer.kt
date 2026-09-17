@@ -41,6 +41,26 @@ import com.example.ui.theme.StudioMint
 import kotlin.math.sin
 
 /**
+ * Drives the loading skeleton's shimmer, but only while [active]. When inactive no
+ * animation is registered at all, so idle waveforms stop recomposing.
+ */
+@Composable
+private fun rememberShimmerOffset(active: Boolean): Float {
+  if (!active) return 0f
+  val transition = rememberInfiniteTransition(label = "waveform_loading")
+  val shimmerOffset by transition.animateFloat(
+    initialValue = 0f,
+    targetValue = 1f,
+    animationSpec = infiniteRepeatable(
+      animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
+      repeatMode = RepeatMode.Reverse
+    ),
+    label = "shimmer_anim"
+  )
+  return shimmerOffset
+}
+
+/**
  * Interactive Waveform Visualizer.
  * Renders real audio amplitude peaks with played/unplayed zones and a seeking playhead.
  * Supports direct tapping and smooth dragging to scrub through the audio file.
@@ -63,17 +83,10 @@ fun WaveformVisualizer(
 
   val effectiveProgress = if (isDragging) dragProgress else clampedProgress
 
-  // Animated shimmer for loading state
-  val transition = rememberInfiniteTransition(label = "waveform_loading")
-  val shimmerOffset by transition.animateFloat(
-    initialValue = 0f,
-    targetValue = 1f,
-    animationSpec = infiniteRepeatable(
-      animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
-      repeatMode = RepeatMode.Reverse
-    ),
-    label = "shimmer_anim"
-  )
+  // Only animate while the skeleton is actually on screen. Running the infinite
+  // transition unconditionally kept every waveform recomposing forever.
+  val showSkeleton = isLoading || amplitudes == null || amplitudes.isEmpty()
+  val shimmerOffset = rememberShimmerOffset(active = showSkeleton)
 
   Box(
     modifier = modifier

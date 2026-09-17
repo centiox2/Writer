@@ -28,7 +28,7 @@ interface SongDao {
     FROM songs s
     LEFT JOIN albums a ON a.id = s.albumId
     WHERE s.archived = 0
-    ORDER BY s.updatedAt DESC
+    ORDER BY s.updatedAt DESC, s.rowid DESC
   """)
   fun getActiveSongsWithDetails(): Flow<List<SongWithDetails>>
 
@@ -41,7 +41,7 @@ interface SongDao {
     FROM songs s
     LEFT JOIN albums a ON a.id = s.albumId
     WHERE s.favorite = 1 AND s.archived = 0
-    ORDER BY s.updatedAt DESC
+    ORDER BY s.updatedAt DESC, s.rowid DESC
   """)
   fun getFavoriteSongsWithDetails(): Flow<List<SongWithDetails>>
 
@@ -54,7 +54,7 @@ interface SongDao {
     FROM songs s
     LEFT JOIN albums a ON a.id = s.albumId
     WHERE s.archived = 1
-    ORDER BY s.updatedAt DESC
+    ORDER BY s.updatedAt DESC, s.rowid DESC
   """)
   fun getArchivedSongsWithDetails(): Flow<List<SongWithDetails>>
 
@@ -67,7 +67,7 @@ interface SongDao {
     FROM songs s
     LEFT JOIN albums a ON a.id = s.albumId
     WHERE s.albumId = :albumId AND s.archived = 0
-    ORDER BY s.updatedAt DESC
+    ORDER BY s.updatedAt DESC, s.rowid DESC
   """)
   fun getSongsByAlbumWithDetails(albumId: String): Flow<List<SongWithDetails>>
 
@@ -80,7 +80,7 @@ interface SongDao {
     FROM songs s
     LEFT JOIN albums a ON a.id = s.albumId
     WHERE (s.title LIKE '%' || :query || '%' OR s.lyrics LIKE '%' || :query || '%') AND s.archived = 0
-    ORDER BY s.updatedAt DESC
+    ORDER BY s.updatedAt DESC, s.rowid DESC
   """)
   fun searchSongsWithDetails(query: String): Flow<List<SongWithDetails>>
 
@@ -96,25 +96,25 @@ interface SongDao {
   """)
   fun getSongWithDetailsById(id: String): Flow<SongWithDetails?>
 
-  @Query("SELECT * FROM songs WHERE archived = 0 ORDER BY updatedAt DESC")
+  @Query("SELECT * FROM songs WHERE archived = 0 ORDER BY updatedAt DESC, rowid DESC")
   fun getActiveSongs(): Flow<List<SongEntity>>
 
-  @Query("SELECT * FROM songs WHERE archived = 0 ORDER BY updatedAt DESC")
+  @Query("SELECT * FROM songs WHERE archived = 0 ORDER BY updatedAt DESC, rowid DESC")
   suspend fun getActiveSongsSync(): List<SongEntity>
 
-  @Query("SELECT * FROM songs ORDER BY updatedAt DESC")
+  @Query("SELECT * FROM songs ORDER BY updatedAt DESC, rowid DESC")
   suspend fun getAllSongsSync(): List<SongEntity>
 
-  @Query("SELECT * FROM songs WHERE archived = 1 ORDER BY updatedAt DESC")
+  @Query("SELECT * FROM songs WHERE archived = 1 ORDER BY updatedAt DESC, rowid DESC")
   fun getArchivedSongs(): Flow<List<SongEntity>>
 
-  @Query("SELECT * FROM songs WHERE favorite = 1 AND archived = 0 ORDER BY updatedAt DESC")
+  @Query("SELECT * FROM songs WHERE favorite = 1 AND archived = 0 ORDER BY updatedAt DESC, rowid DESC")
   fun getFavoriteSongs(): Flow<List<SongEntity>>
 
-  @Query("SELECT * FROM songs WHERE albumId = :albumId AND archived = 0 ORDER BY updatedAt DESC")
+  @Query("SELECT * FROM songs WHERE albumId = :albumId AND archived = 0 ORDER BY updatedAt DESC, rowid DESC")
   fun getSongsByAlbum(albumId: String): Flow<List<SongEntity>>
 
-  @Query("SELECT * FROM songs WHERE albumId = :albumId AND archived = 0 ORDER BY updatedAt DESC")
+  @Query("SELECT * FROM songs WHERE albumId = :albumId AND archived = 0 ORDER BY updatedAt DESC, rowid DESC")
   suspend fun getSongsByAlbumSync(albumId: String): List<SongEntity>
 
   @Query("SELECT * FROM songs WHERE id = :id")
@@ -123,7 +123,7 @@ interface SongDao {
   @Query("SELECT * FROM songs WHERE id = :id")
   suspend fun getSongById(id: String): SongEntity?
 
-  @Query("SELECT * FROM songs WHERE (title LIKE '%' || :query || '%' OR lyrics LIKE '%' || :query || '%') AND archived = 0 ORDER BY updatedAt DESC")
+  @Query("SELECT * FROM songs WHERE (title LIKE '%' || :query || '%' OR lyrics LIKE '%' || :query || '%') AND archived = 0 ORDER BY updatedAt DESC, rowid DESC")
   fun searchSongs(query: String): Flow<List<SongEntity>>
 
   @Insert(onConflict = OnConflictStrategy.REPLACE)
