@@ -31,6 +31,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -92,12 +94,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -559,7 +565,7 @@ fun LyricEditorScreen(
   // Audio Import Error Dialog
   uiState.beatImportError?.let { errorMsg ->
     AlertDialog(
-      onDismissRequest = { /* Dismissal handled via retry or cancel */ },
+      onDismissRequest = { viewModel.dismissBeatImportError() },
       title = { Text("Audio Import Error") },
       text = { Text(errorMsg) },
       confirmButton = {
@@ -659,6 +665,8 @@ fun SearchInLyricsBar(
   onCloseSearch: () -> Unit,
   modifier: Modifier = Modifier
 ) {
+  val focusManager = LocalFocusManager.current
+
   Surface(
     modifier = modifier.fillMaxWidth(),
     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -692,6 +700,8 @@ fun SearchInLyricsBar(
           unfocusedContainerColor = MaterialTheme.colorScheme.surface,
           focusedBorderColor = StudioBlue
         ),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
         modifier = Modifier
           .weight(1f)
           .height(48.dp)
@@ -955,6 +965,7 @@ fun FormattingBottomSheet(
     Column(
       modifier = Modifier
         .fillMaxWidth()
+        .verticalScroll(rememberScrollState())
         .padding(horizontal = 24.dp, vertical = 16.dp),
       verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
@@ -991,7 +1002,9 @@ fun FormattingBottomSheet(
             thumbColor = StudioBlue,
             activeTrackColor = StudioBlue
           ),
-          modifier = Modifier.testTag("font_size_slider")
+          modifier = Modifier
+            .semantics { contentDescription = "Font size" }
+            .testTag("font_size_slider")
         )
 
         // Preset chips

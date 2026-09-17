@@ -25,6 +25,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -103,7 +105,8 @@ fun AlbumCoverPresetPicker(
           .size(44.dp)
           .clip(RoundedCornerShape(8.dp))
           .background(Brush.linearGradient(listOf(preset.gradientStart, preset.gradientEnd)))
-          .clickable { onSelectPreset(preset.id) },
+          .clickable { onSelectPreset(preset.id) }
+          .semantics { contentDescription = "${preset.name} cover${if (isSelected) ", selected" else ""}" },
         contentAlignment = Alignment.Center
       ) {
         if (isSelected) {

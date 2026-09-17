@@ -30,6 +30,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.ui.theme.StudioBlue
@@ -75,6 +79,12 @@ fun WaveformVisualizer(
     modifier = modifier
       .fillMaxWidth()
       .height(height)
+      .semantics {
+        contentDescription = "Waveform, tap or drag to seek"
+        if (!isLoading && amplitudes != null && amplitudes.isNotEmpty()) {
+          progressBarRangeInfo = ProgressBarRangeInfo(effectiveProgress, 0f..1f)
+        }
+      }
       .testTag("waveform_visualizer")
       .pointerInput(amplitudes, isLoading) {
         if (isLoading || amplitudes == null || amplitudes.isEmpty()) return@pointerInput
