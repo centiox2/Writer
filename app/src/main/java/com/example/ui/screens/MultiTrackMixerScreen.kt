@@ -9,6 +9,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,7 +48,6 @@ import androidx.compose.material.icons.filled.VolumeMute
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -64,6 +65,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -71,6 +74,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -83,6 +87,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -112,6 +118,14 @@ fun MultiTrackMixerScreen(
   val context = LocalContext.current
   val uiState by viewModel.uiState.collectAsState()
   var showAddTrackMenu by remember { mutableStateOf(false) }
+  val snackbarHostState = remember { SnackbarHostState() }
+
+  LaunchedEffect(uiState.errorMessage) {
+    uiState.errorMessage?.let { message ->
+      snackbarHostState.showSnackbar(message)
+      viewModel.dismissErrorMessage()
+    }
+  }
 
   val audioPickerLauncher = rememberLauncherForActivityResult(
     contract = ActivityResultContracts.OpenDocument()
@@ -252,6 +266,7 @@ fun MultiTrackMixerScreen(
         onMasterVolumeChange = { viewModel.setMasterVolume(it) }
       )
     },
+    snackbarHost = { SnackbarHost(snackbarHostState) },
     modifier = modifier.fillMaxSize()
   ) { paddingValues ->
     Box(
@@ -314,38 +329,12 @@ fun MultiTrackMixerScreen(
 
   // Delete Track Confirmation Dialog
   uiState.showDeleteConfirmDialog?.let { trackToDelete ->
-    AlertDialog(
-      onDismissRequest = { viewModel.dismissDeleteDialog() },
-      title = { Text("Delete Track?") },
-      text = { Text("Are you sure you want to remove \"${trackToDelete.name}\" from the mixer project?") },
-      confirmButton = {
-        TextButton(
-          onClick = { viewModel.deleteTrack(trackToDelete.id) },
-          colors = ButtonDefaults.textButtonColors(contentColor = StudioRed),
-          modifier = Modifier.testTag("confirm_delete_track_button")
-        ) {
-          Text("Delete", fontWeight = FontWeight.Bold)
-        }
-      },
-      dismissButton = {
-        TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
-          Text("Cancel")
-        }
-      }
-    )
-  }
-
-  // Error Dialog
-  uiState.errorMessage?.let { errorMsg ->
-    AlertDialog(
-      onDismissRequest = { viewModel.dismissErrorMessage() },
-      title = { Text("Mixer Notice") },
-      text = { Text(errorMsg) },
-      confirmButton = {
-        TextButton(onClick = { viewModel.dismissErrorMessage() }) {
-          Text("OK")
-        }
-      }
+    DeleteConfirmDialog(
+      title = "Delete Track?",
+      message = "Are you sure you want to remove \"${trackToDelete.name}\" from the mixer project?",
+      confirmButtonText = "Delete Track",
+      onDismiss = { viewModel.dismissDeleteDialog() },
+      onConfirm = { viewModel.deleteTrack(trackToDelete.id) }
     )
   }
 
@@ -528,7 +517,8 @@ private fun TrackChannelCard(
           activeColor = StudioRed,
           activeContentColor = Color.White,
           onClick = onToggleMute,
-          testTag = "mute_track_${track.id}"
+          testTag = "mute_track_${track.id}",
+          accessibilityLabel = if (track.muted) "Unmute ${track.name}" else "Mute ${track.name}"
         )
 
         Spacer(modifier = Modifier.width(6.dp))
@@ -540,7 +530,8 @@ private fun TrackChannelCard(
           activeColor = StudioAmber,
           activeContentColor = Color.Black,
           onClick = onToggleSolo,
-          testTag = "solo_track_${track.id}"
+          testTag = "solo_track_${track.id}",
+          accessibilityLabel = if (track.solo) "Unsolo ${track.name}" else "Solo ${track.name}"
         )
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -569,6 +560,7 @@ private fun TrackChannelCard(
           ),
           modifier = Modifier
             .weight(1f)
+            .semantics { contentDescription = "${track.name} volume" }
             .testTag("volume_slider_${track.id}")
         )
 
@@ -596,6 +588,7 @@ private fun ChannelStripButton(
   activeContentColor: Color,
   onClick: () -> Unit,
   testTag: String,
+  accessibilityLabel: String,
   modifier: Modifier = Modifier
 ) {
   Box(
@@ -604,6 +597,7 @@ private fun ChannelStripButton(
       .clip(RoundedCornerShape(8.dp))
       .background(if (isActive) activeColor else MaterialTheme.colorScheme.surfaceVariant)
       .clickable(onClick = onClick)
+      .semantics { contentDescription = accessibilityLabel }
       .testTag(testTag),
     contentAlignment = Alignment.Center
   ) {
@@ -661,6 +655,7 @@ private fun MasterTransportBar(
         modifier = Modifier
           .fillMaxWidth()
           .height(24.dp)
+          .semantics { contentDescription = "Playback position" }
           .testTag("mixer_timeline_slider")
       )
 
@@ -758,6 +753,7 @@ private fun MasterTransportBar(
             ),
             modifier = Modifier
               .weight(1f)
+              .semantics { contentDescription = "Master volume" }
               .testTag("master_volume_slider")
           )
         }
@@ -856,6 +852,7 @@ fun WavExportBottomSheet(
     Column(
       modifier = Modifier
         .fillMaxWidth()
+        .verticalScroll(rememberScrollState())
         .padding(horizontal = 24.dp, vertical = 12.dp)
         .padding(bottom = 24.dp)
     ) {

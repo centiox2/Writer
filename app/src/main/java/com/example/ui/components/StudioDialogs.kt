@@ -7,12 +7,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Delete
@@ -185,51 +188,58 @@ fun MoveSongToAlbumDialog(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Option 1: No Album (Single / Standalone)
-        Row(
+        Column(
           modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .clickable { selectedId = null }
-            .padding(vertical = 8.dp, horizontal = 4.dp),
-          verticalAlignment = Alignment.CenterVertically
+            .heightIn(max = 320.dp)
+            .verticalScroll(rememberScrollState())
         ) {
-          RadioButton(
-            selected = selectedId == null,
-            onClick = { selectedId = null },
-            colors = RadioButtonDefaults.colors(selectedColor = StudioBlue)
-          )
-          Spacer(modifier = Modifier.width(8.dp))
-          Text(
-            text = "No Album (Standalone Single)",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
-          )
-        }
-
-        // List of existing albums
-        albums.forEach { album ->
+          // Option 1: No Album (Single / Standalone)
           Row(
             modifier = Modifier
               .fillMaxWidth()
               .clip(RoundedCornerShape(8.dp))
-              .clickable { selectedId = album.id }
+              .clickable { selectedId = null }
               .padding(vertical = 8.dp, horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
           ) {
             RadioButton(
-              selected = selectedId == album.id,
-              onClick = { selectedId = album.id },
+              selected = selectedId == null,
+              onClick = { selectedId = null },
               colors = RadioButtonDefaults.colors(selectedColor = StudioBlue)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            AlbumArtworkThumbnail(artworkUri = album.artworkUri, size = 32.dp, shapeRadius = 6.dp)
-            Spacer(modifier = Modifier.width(10.dp))
             Text(
-              text = album.name,
+              text = "No Album (Standalone Single)",
               style = MaterialTheme.typography.bodyMedium,
               color = MaterialTheme.colorScheme.onSurface
             )
+          }
+
+          // List of existing albums
+          albums.forEach { album ->
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { selectedId = album.id }
+                .padding(vertical = 8.dp, horizontal = 4.dp),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              RadioButton(
+                selected = selectedId == album.id,
+                onClick = { selectedId = album.id },
+                colors = RadioButtonDefaults.colors(selectedColor = StudioBlue)
+              )
+              Spacer(modifier = Modifier.width(8.dp))
+              AlbumArtworkThumbnail(artworkUri = album.artworkUri, size = 32.dp, shapeRadius = 6.dp)
+              Spacer(modifier = Modifier.width(10.dp))
+              Text(
+                text = album.name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+              )
+            }
           }
         }
       }

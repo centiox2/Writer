@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Archive
@@ -57,10 +59,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -95,6 +99,7 @@ fun SongsScreen(
   val uiState by viewModel.uiState.collectAsState()
   val rawSearchQuery by viewModel.searchQuery.collectAsState()
   val albums by viewModel.albums.collectAsState()
+  val focusManager = LocalFocusManager.current
 
   var songToRename by remember { mutableStateOf<Song?>(null) }
   var songToDelete by remember { mutableStateOf<Song?>(null) }
@@ -251,7 +256,9 @@ fun SongsScreen(
         unfocusedContainerColor = MaterialTheme.colorScheme.surface,
         focusedBorderColor = StudioBlue,
         unfocusedBorderColor = MaterialTheme.colorScheme.outline
-      )
+      ),
+      keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+      keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
     )
 
     Spacer(modifier = Modifier.height(8.dp))

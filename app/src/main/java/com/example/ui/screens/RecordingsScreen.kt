@@ -1,14 +1,5 @@
 package com.example.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Add
@@ -89,7 +82,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -99,6 +95,7 @@ import com.example.audio.RecordingState
 import com.example.domain.models.Recording
 import com.example.domain.models.Song
 import com.example.domain.models.TrackType
+import com.example.ui.components.DeleteConfirmDialog
 import com.example.ui.components.WaveformVisualizer
 import com.example.ui.theme.StudioAmber
 import com.example.ui.theme.StudioBlue
@@ -120,6 +117,7 @@ fun RecordingsScreen(
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val snackbarHostState = remember { SnackbarHostState() }
+  val focusManager = LocalFocusManager.current
 
   LaunchedEffect(uiState.message, uiState.errorMessage) {
     uiState.message?.let {
@@ -202,6 +200,8 @@ fun RecordingsScreen(
         },
         singleLine = true,
         shape = RoundedCornerShape(12.dp),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
         modifier = Modifier
           .fillMaxWidth()
           .testTag("recordings_search_input")
@@ -385,29 +385,12 @@ fun RecordingsScreen(
 
   // Delete Dialog
   uiState.showDeleteDialog?.let { recording ->
-    AlertDialog(
-      onDismissRequest = { viewModel.dismissDeleteDialog() },
-      icon = {
-        Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = StudioRed)
-      },
-      title = { Text("Delete Take?") },
-      text = {
-        Text("Are you sure you want to permanently delete \"${recording.name}\"? This will also remove the recorded audio file from storage.")
-      },
-      confirmButton = {
-        Button(
-          onClick = { viewModel.deleteRecording(recording) },
-          colors = ButtonDefaults.buttonColors(containerColor = StudioRed),
-          modifier = Modifier.testTag("delete_take_confirm")
-        ) {
-          Text("Delete")
-        }
-      },
-      dismissButton = {
-        TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
-          Text("Cancel")
-        }
-      }
+    DeleteConfirmDialog(
+      title = "Delete Take?",
+      message = "Are you sure you want to permanently delete \"${recording.name}\"? This will also remove the recorded audio file from storage.",
+      confirmButtonText = "Delete Take",
+      onDismiss = { viewModel.dismissDeleteDialog() },
+      onConfirm = { viewModel.deleteRecording(recording) }
     )
   }
 
@@ -769,6 +752,7 @@ fun RecordingTakeCard(
             color = if (item.isMuted) StudioRed.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier
               .size(34.dp)
+              .semantics { contentDescription = if (item.isMuted) "Unmute take" else "Mute take" }
               .testTag("mute_take_${recording.id}")
           ) {
             Box(contentAlignment = Alignment.Center) {
@@ -789,6 +773,7 @@ fun RecordingTakeCard(
             color = if (item.isSolo) StudioAmber.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier
               .size(34.dp)
+              .semantics { contentDescription = if (item.isSolo) "Unsolo take" else "Solo take" }
               .testTag("solo_take_${recording.id}")
           ) {
             Box(contentAlignment = Alignment.Center) {
@@ -864,6 +849,8 @@ fun NewTakeBottomSheet(
     Column(
       modifier = Modifier
         .fillMaxWidth()
+        .verticalScroll(rememberScrollState())
+        .imePadding()
         .padding(horizontal = 24.dp, vertical = 16.dp),
       horizontalAlignment = Alignment.CenterHorizontally
     ) {
