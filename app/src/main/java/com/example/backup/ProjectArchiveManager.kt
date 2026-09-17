@@ -26,6 +26,15 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
+/**
+ * Reads an optional string field. Returns null for absent keys, JSON nulls, blanks, and the
+ * literal "null" that [JSONObject.optString] yields when a value is [JSONObject.NULL].
+ */
+private fun JSONObject.optStringOrNull(name: String): String? {
+  if (!has(name) || isNull(name)) return null
+  return optString(name).takeIf { it.isNotBlank() && it != "null" }
+}
+
 class ProjectArchiveManager(
   private val context: Context,
   private val database: SongDatabase,
@@ -592,8 +601,8 @@ class ProjectArchiveManager(
         val origAlbumId = albumObj.getString("id")
         val name = albumObj.getString("name")
         val desc = albumObj.optString("description", "")
-        val origArtUri = albumObj.optString("artworkUri", null)
-        val artFileRel = albumObj.optString("artworkFile", null)
+        val origArtUri = albumObj.optStringOrNull("artworkUri")
+        val artFileRel = albumObj.optStringOrNull("artworkFile")
 
         var finalArtworkUri: String? = origArtUri
         if (!artFileRel.isNullOrBlank()) {
@@ -641,14 +650,14 @@ class ProjectArchiveManager(
         val origSongId = songObj.getString("id")
         val title = songObj.getString("title")
         val lyrics = songObj.optString("lyrics", "")
-        val origAlbumId = songObj.optString("albumId", null).takeIf { it != "null" }
+        val origAlbumId = songObj.optStringOrNull("albumId")
         val targetAlbumId = origAlbumId?.let { albumIdMap[it] ?: it }
-        val origArtUri = songObj.optString("artworkUri", null).takeIf { it != "null" }
-        val artFileRel = songObj.optString("artworkFile", null)
+        val origArtUri = songObj.optStringOrNull("artworkUri")
+        val artFileRel = songObj.optStringOrNull("artworkFile")
         val favorite = songObj.optBoolean("favorite", false)
         val archived = songObj.optBoolean("archived", false)
         val bpm = if (songObj.has("bpm") && !songObj.isNull("bpm")) songObj.getInt("bpm") else null
-        val keySig = songObj.optString("keySignature", null).takeIf { it != "null" }
+        val keySig = songObj.optStringOrNull("keySignature")
 
         var finalArtworkUri: String? = origArtUri
         if (!artFileRel.isNullOrBlank()) {
@@ -706,7 +715,7 @@ class ProjectArchiveManager(
           val volume = trackObj.optDouble("volume", 1.0).toFloat()
           val muted = trackObj.optBoolean("muted", false)
           val solo = trackObj.optBoolean("solo", false)
-          val audioFileRel = trackObj.optString("audioFile", null)
+          val audioFileRel = trackObj.optStringOrNull("audioFile")
 
           var destAudioUri = ""
           if (!audioFileRel.isNullOrBlank()) {
@@ -744,7 +753,7 @@ class ProjectArchiveManager(
           val origRecId = recObj.getString("id")
           val recName = recObj.getString("name")
           val duration = recObj.optLong("duration", 0L)
-          val audioFileRel = recObj.optString("audioFile", null)
+          val audioFileRel = recObj.optStringOrNull("audioFile")
 
           var destAudioUri = ""
           if (!audioFileRel.isNullOrBlank()) {

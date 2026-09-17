@@ -11,13 +11,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RecordingDao {
-  @Query("SELECT * FROM recordings WHERE songId = :songId ORDER BY createdAt DESC")
+  @Query("SELECT * FROM recordings WHERE songId = :songId ORDER BY createdAt DESC, rowid DESC")
   fun getRecordingsForSong(songId: String): Flow<List<RecordingEntity>>
 
-  @Query("SELECT * FROM recordings ORDER BY createdAt DESC")
+  @Query("SELECT * FROM recordings ORDER BY createdAt DESC, rowid DESC")
   fun getAllRecordings(): Flow<List<RecordingEntity>>
 
-  @Query("SELECT * FROM recordings ORDER BY createdAt DESC")
+  @Query("SELECT * FROM recordings ORDER BY createdAt DESC, rowid DESC")
   suspend fun getAllRecordingsSync(): List<RecordingEntity>
 
   @Query("SELECT * FROM recordings WHERE songId = :songId")

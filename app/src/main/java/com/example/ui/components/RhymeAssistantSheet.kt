@@ -29,12 +29,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Input
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Input
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Search
@@ -579,7 +579,7 @@ fun RhymeCandidateItem(
             horizontalArrangement = Arrangement.spacedBy(4.dp)
           ) {
             Icon(
-              imageVector = Icons.Default.Input,
+              imageVector = Icons.AutoMirrored.Filled.Input,
               contentDescription = "Insert at cursor",
               tint = StudioPurple,
               modifier = Modifier.size(14.dp)

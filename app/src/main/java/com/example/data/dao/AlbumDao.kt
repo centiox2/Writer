@@ -21,10 +21,10 @@ data class AlbumWithSongCount(
 
 @Dao
 interface AlbumDao {
-  @Query("SELECT * FROM albums ORDER BY updatedAt DESC")
+  @Query("SELECT * FROM albums ORDER BY updatedAt DESC, rowid DESC")
   fun getAllAlbums(): Flow<List<AlbumEntity>>
 
-  @Query("SELECT * FROM albums ORDER BY updatedAt DESC")
+  @Query("SELECT * FROM albums ORDER BY updatedAt DESC, rowid DESC")
   suspend fun getAllAlbumsSync(): List<AlbumEntity>
 
   @Query("""
@@ -34,7 +34,7 @@ interface AlbumDao {
     FROM albums a
     LEFT JOIN songs s ON s.albumId = a.id AND s.archived = 0
     GROUP BY a.id
-    ORDER BY a.updatedAt DESC
+    ORDER BY a.updatedAt DESC, a.rowid DESC
   """)
   fun getAlbumsWithSongCount(): Flow<List<AlbumWithSongCount>>
 

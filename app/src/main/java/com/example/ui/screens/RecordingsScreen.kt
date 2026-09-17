@@ -89,6 +89,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.audio.RecordingState
@@ -119,14 +120,18 @@ fun RecordingsScreen(
   val snackbarHostState = remember { SnackbarHostState() }
   val focusManager = LocalFocusManager.current
 
-  LaunchedEffect(uiState.message, uiState.errorMessage) {
+  // Kept separate so a success message can't clear an error before it is shown.
+  LaunchedEffect(uiState.message) {
     uiState.message?.let {
       snackbarHostState.showSnackbar(it)
       viewModel.clearMessage()
     }
+  }
+
+  LaunchedEffect(uiState.errorMessage) {
     uiState.errorMessage?.let {
       snackbarHostState.showSnackbar(it)
-      viewModel.clearMessage()
+      viewModel.clearErrorMessage()
     }
   }
 
@@ -598,7 +603,8 @@ fun RecordingTakeCard(
               style = MaterialTheme.typography.titleMedium,
               fontWeight = FontWeight.SemiBold,
               color = MaterialTheme.colorScheme.onSurface,
-              maxLines = 1
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
             )
             Row(
               verticalAlignment = Alignment.CenterVertically,
@@ -606,13 +612,16 @@ fun RecordingTakeCard(
             ) {
               Surface(
                 color = StudioBlue.copy(alpha = 0.12f),
-                shape = RoundedCornerShape(4.dp)
+                shape = RoundedCornerShape(4.dp),
+                modifier = Modifier.weight(1f, fill = false)
               ) {
                 Text(
                   text = item.songTitle ?: "Standalone",
                   style = MaterialTheme.typography.labelSmall,
                   color = StudioBlue,
                   fontWeight = FontWeight.Medium,
+                  maxLines = 1,
+                  overflow = TextOverflow.Ellipsis,
                   modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
               }
@@ -624,7 +633,9 @@ fun RecordingTakeCard(
               Text(
                 text = formattedDate,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
               )
             }
           }

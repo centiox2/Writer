@@ -28,6 +28,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
@@ -43,10 +46,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.VolumeDown
 import androidx.compose.material.icons.filled.VolumeMute
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -539,9 +539,9 @@ private fun TrackChannelCard(
         // Track Volume Slider
         Icon(
           imageVector = when {
-            track.muted || track.volume == 0f -> Icons.Default.VolumeOff
-            track.volume < 0.5f -> Icons.Default.VolumeDown
-            else -> Icons.Default.VolumeUp
+            track.muted || track.volume == 0f -> Icons.AutoMirrored.Filled.VolumeOff
+            track.volume < 0.5f -> Icons.AutoMirrored.Filled.VolumeDown
+            else -> Icons.AutoMirrored.Filled.VolumeUp
           },
           contentDescription = null,
           tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -556,7 +556,8 @@ private fun TrackChannelCard(
           valueRange = 0f..2.0f,
           colors = SliderDefaults.colors(
             thumbColor = if (isAudible) typeColor else MaterialTheme.colorScheme.outline,
-            activeTrackColor = if (isAudible) typeColor else MaterialTheme.colorScheme.outlineVariant
+            activeTrackColor = if (isAudible) typeColor else MaterialTheme.colorScheme.outlineVariant,
+            inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
           ),
           modifier = Modifier
             .weight(1f)
@@ -650,7 +651,8 @@ private fun MasterTransportBar(
         },
         colors = SliderDefaults.colors(
           thumbColor = StudioBlue,
-          activeTrackColor = StudioBlue
+          activeTrackColor = StudioBlue,
+          inactiveTrackColor = StudioBlue.copy(alpha = 0.20f)
         ),
         modifier = Modifier
           .fillMaxWidth()
@@ -749,7 +751,8 @@ private fun MasterTransportBar(
             valueRange = 0f..2.0f,
             colors = SliderDefaults.colors(
               thumbColor = StudioMint,
-              activeTrackColor = StudioMint
+              activeTrackColor = StudioMint,
+              inactiveTrackColor = StudioMint.copy(alpha = 0.24f)
             ),
             modifier = Modifier
               .weight(1f)

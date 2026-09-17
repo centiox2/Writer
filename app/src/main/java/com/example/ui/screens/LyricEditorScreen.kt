@@ -35,6 +35,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -52,7 +53,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Psychology
@@ -95,7 +95,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -104,6 +104,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -181,6 +182,7 @@ fun LyricEditorScreen(
               text = uiState.song?.title ?: "Lyrics",
               style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
               maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
               color = MaterialTheme.colorScheme.onSurface
             )
             // Save status indicator
@@ -231,7 +233,9 @@ fun LyricEditorScreen(
               Text(
                 text = "• ${uiState.wordCount} words • ${uiState.lineCount} lines",
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
               )
             }
           }
@@ -289,44 +293,8 @@ fun LyricEditorScreen(
             )
           }
 
-          // Multi-Track Mixer Button
-          IconButton(
-            onClick = {
-              viewModel.saveNow()
-              onNavigateToMixer(uiState.song?.id ?: "")
-            },
-            modifier = Modifier.testTag("editor_open_mixer_button")
-          ) {
-            Icon(
-              imageVector = Icons.Default.GraphicEq,
-              contentDescription = "Multi-Track Mixer",
-              tint = StudioMint
-            )
-          }
-
-          // Rhyme Assistant Button
-          IconButton(
-            onClick = { viewModel.openRhymeAssistant() },
-            modifier = Modifier.testTag("editor_rhyme_assistant_button")
-          ) {
-            Icon(
-              imageVector = Icons.Default.Psychology,
-              contentDescription = "Offline Rhyme Assistant",
-              tint = StudioPurple
-            )
-          }
-
-          // Keep screen on toggle
-          IconButton(
-            onClick = { viewModel.toggleKeepScreenOn() },
-            modifier = Modifier.testTag("editor_keep_screen_on_button")
-          ) {
-            Icon(
-              imageVector = Icons.Default.Lightbulb,
-              contentDescription = if (uiState.keepScreenOn) "Screen kept awake" else "Keep screen awake",
-              tint = if (uiState.keepScreenOn) StudioOrange else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-            )
-          }
+          // Mixer, rhyme assistant and keep-awake live in the overflow menu below:
+          // as top-level icons they starved the title slot on normal phone widths.
 
           // More Options Menu
           Box {
@@ -364,7 +332,7 @@ fun LyricEditorScreen(
               if (uiState.detectedSections.isNotEmpty()) {
                 DropdownMenuItem(
                   text = { Text("Jump to Section (${uiState.detectedSections.size})") },
-                  leadingIcon = { Icon(Icons.Default.MenuBook, contentDescription = null) },
+                  leadingIcon = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null) },
                   onClick = {
                     showMenu = false
                     viewModel.setShowSectionJumpSheet(true)
@@ -398,6 +366,22 @@ fun LyricEditorScreen(
                   showMenu = false
                   beatAudioPickerLauncher.launch(AudioFileManager.SUPPORTED_MIME_TYPES)
                 }
+              )
+
+              DropdownMenuItem(
+                text = { Text(if (uiState.keepScreenOn) "Keep Screen Awake: On" else "Keep Screen Awake: Off") },
+                leadingIcon = {
+                  Icon(
+                    imageVector = Icons.Default.Lightbulb,
+                    contentDescription = null,
+                    tint = if (uiState.keepScreenOn) StudioOrange else MaterialTheme.colorScheme.onSurfaceVariant
+                  )
+                },
+                onClick = {
+                  showMenu = false
+                  viewModel.toggleKeepScreenOn()
+                },
+                modifier = Modifier.testTag("editor_keep_screen_on_button")
               )
 
               DropdownMenuItem(
@@ -784,7 +768,7 @@ fun LyricSectionChipsBar(
           horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
           Icon(
-            imageVector = Icons.Default.MenuBook,
+            imageVector = Icons.AutoMirrored.Filled.MenuBook,
             contentDescription = "Sections Outline",
             tint = StudioPurple,
             modifier = Modifier.size(14.dp)
@@ -1000,7 +984,8 @@ fun FormattingBottomSheet(
           steps = 7,
           colors = SliderDefaults.colors(
             thumbColor = StudioBlue,
-            activeTrackColor = StudioBlue
+            activeTrackColor = StudioBlue,
+            inactiveTrackColor = StudioBlue.copy(alpha = 0.24f)
           ),
           modifier = Modifier
             .semantics { contentDescription = "Font size" }
