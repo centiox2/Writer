@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Studio Waveform Bars + Songwriter Fountain Pen / Quill Motif -->
+    <!-- Left bar 1 -->
+    <path
+        android:pathData="M34,46 L34,62"
+        android:strokeWidth="3.5"
+        android:strokeColor="#38D9A9"
+        android:strokeLineCap="round" />
+    <!-- Bar 2 -->
+    <path
+        android:pathData="M40,38 L40,70"
+        android:strokeWidth="3.5"
+        android:strokeColor="#4D88FF"
+        android:strokeLineCap="round" />
+    <!-- Bar 3 (Quill/Stylus pen body) -->
+    <path
+        android:pathData="M51,28 L64,41 L50,75 L45,76 L44,71 Z"
+        android:fillColor="#F0F4FC" />
+    <path
+        android:pathData="M44,71 L45,76 L50,75 Z"
+        android:fillColor="#38D9A9" />
+    <!-- Nib slit -->
+    <path
+        android:pathData="M47,73 L52,60"
+        android:strokeWidth="1.2"
+        android:strokeColor="#0D111A"
+        android:strokeLineCap="round" />
+    <!-- Right bar 4 -->
+    <path
+        android:pathData="M68,36 L68,72"
+        android:strokeWidth="3.5"
+        android:strokeColor="#4D88FF"
+        android:strokeLineCap="round" />
+    <!-- Right bar 5 -->
+    <path
+        android:pathData="M74,44 L74,64"
+        android:strokeWidth="3.5"
+        android:strokeColor="#38D9A9"
+        android:strokeLineCap="round" />
+    <!-- Floating Eighth Note Accent -->
+    <path
+        android:pathData="M59,28 L66,24 L66,34 M59,34 C59,32 61,30 63,30"
+        android:strokeWidth="2"
+        android:strokeColor="#7CAEFF"
+        android:strokeLineCap="round" />
+</vector>

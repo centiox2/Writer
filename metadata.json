@@ -1,0 +1,7 @@
+{
+  "name": "Songwriter",
+  "description": "Professional offline songwriting studio with lyrics editor, rhyme finder, multitrack audio recording, and mixer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
